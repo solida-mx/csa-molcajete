@@ -17,8 +17,12 @@
                        ubicación / horarios / Maps / Facebook.
   mesas/index.html ... QR de mesas (página aparte, uso del dueño,
                        mismo diseño Molcajete): genera e imprime
-                       las etiquetas con el logo al centro del QR.
-  img/ ............... Logo en PNG transparente y JPG optimizado.
+                       las etiquetas. Los QR van en los COLORES DE
+                       LA MARCA (módulos verdes, esquinas rojas) y
+                       con el ÍCONO DEL MOLCAJETE al centro.
+  img/ ............... logo.png (letrero completo, transparente),
+                       molcajete-icon.png (ícono para el QR) y
+                       logo-fondo-negro.jpg.
 
   Estos archivos van DIRECTO en la raíz del repositorio (así como
   ya lo tienes publicado). No los metas en una subcarpeta o las
@@ -76,9 +80,10 @@
     Chica   · 9 por hoja · aprox. 6 × 8 cm
     Mediana · 4 por hoja · aprox. 9.5 × 12.5 cm
     Grande  · 2 por hoja · aprox. 12 × 12.5 cm
-  Los QR usan corrección de error nivel alto (H) y el logo cubre
-  menos del 10% del código: escanean bien en los tres tamaños
-  (verificado con lector).
+  Los QR usan corrección de error nivel alto (H), colores de
+  marca suficientemente oscuros para cualquier lector, y el
+  ícono cubre menos del 10% del código. Verificado con lector
+  en los tres tamaños y en las 3 mesas.
 
 ┌───────────────────────────────────────────────────────────┐
 │  DATOS CONFIGURADOS                                         │

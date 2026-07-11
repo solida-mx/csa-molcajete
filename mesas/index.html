@@ -167,12 +167,12 @@ document.querySelectorAll("[data-copy]").forEach(b=>b.onclick=()=>{
   }).catch(()=>{prompt("Copia la liga:",t);});
 });
 
-/* Logo para el centro del QR (se precarga; si falla, el QR sale sin logo) */
+/* Ícono del molcajete para el centro del QR (se precarga; si falla, el QR sale sin logo) */
 let LOGO=null;
 const logoImg=new Image();
 logoImg.onload=()=>{LOGO=logoImg;generar();};
 logoImg.onerror=()=>{LOGO=null;generar();};
-logoImg.src="../img/logo.png";
+logoImg.src="../img/molcajete-icon.png";
 
 function rrl(x,px,py,w,h,r){x.beginPath();x.moveTo(px+r,py);x.arcTo(px+w,py,px+w,py+h,r);x.arcTo(px+w,py+h,px,py+h,r);x.arcTo(px,py+h,px,py,r);x.arcTo(px,py,px+w,py,r);x.closePath();}
 
@@ -184,17 +184,23 @@ function qrCanvas(text,px){
   const size=(n+margin*2)*scale,off=margin*scale;
   cv.width=size;cv.height=size;const ctx=cv.getContext("2d");
   ctx.fillStyle="#fff";ctx.fillRect(0,0,size,size);
-  ctx.fillStyle="#0b0b0b";
-  for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(qr.isDark(r,c))ctx.fillRect(off+c*scale,off+r*scale,scale,scale);
-  /* Placa central con el logo Molcajete (corrección de error nivel H: aguanta esta cobertura) */
+  /* Colores de la marca: módulos en verde oscuro, "ojos" (esquinas) en rojo.
+     Ambos son suficientemente oscuros sobre blanco para que el lector los tome como negro. */
+  const VERDE="#2c5245", ROJO="#c2231b";
+  const esOjo=(r,c)=>(r<7&&c<7)||(r<7&&c>=n-7)||(r>=n-7&&c<7);
+  for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(qr.isDark(r,c)){
+    ctx.fillStyle=esOjo(r,c)?ROJO:VERDE;
+    ctx.fillRect(off+c*scale,off+r*scale,scale,scale);
+  }
+  /* Placa central con el molcajete (corrección de error nivel H: aguanta esta cobertura) */
   if(LOGO){
     const ratio=LOGO.height/LOGO.width;
-    const lw=Math.round(size*0.30), lh=Math.round(lw*ratio);
-    const pad=Math.round(size*0.025);
+    const lw=Math.round(size*0.24), lh=Math.round(lw*ratio);
+    const pad=Math.round(size*0.03);
     const bw=lw+pad*2, bh=lh+pad*2, bx=(size-bw)/2, by=(size-bh)/2;
-    ctx.fillStyle="#ffffff";rrl(ctx,bx,by,bw,bh,Math.round(size*0.03));ctx.fill();
-    ctx.strokeStyle="#e7dcc6";ctx.lineWidth=Math.max(1,scale*0.3);
-    rrl(ctx,bx,by,bw,bh,Math.round(size*0.03));ctx.stroke();
+    ctx.fillStyle="#ffffff";rrl(ctx,bx,by,bw,bh,Math.round(size*0.035));ctx.fill();
+    ctx.strokeStyle=VERDE;ctx.lineWidth=Math.max(1.5,scale*0.35);
+    rrl(ctx,bx,by,bw,bh,Math.round(size*0.035));ctx.stroke();
     ctx.drawImage(LOGO,bx+pad,by+pad,lw,lh);
   }
   return cv;
