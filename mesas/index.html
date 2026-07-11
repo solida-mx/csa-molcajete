@@ -3,53 +3,86 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Molcajete Cocina Mexicana · Generador de QR por mesa</title>
+<title>Molcajete Cocina Mexicana · QR de mesas</title>
+<meta name="robots" content="noindex">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Yeseva+One&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Yeseva+One&family=Karla:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  :root{--char:#0b0b0b;--char-2:#181614;--ember:#c2231b;--ember-2:#eac81f;--cream:#faf5ea;--cream-2:#f1e7d3;--muted:#7d715f;--line:#e7dcc6;--card:#fffdf7;--ink:#2b241c}
+  :root{
+    --negro:#0b0b0b;--negro-2:#181614;
+    --verde:#3d6f5d;--verde-2:#63977f;--verde-osc:#2c5245;
+    --rojo:#c2231b;--rojo-osc:#8e1f1c;--oro:#eac81f;
+    --crema:#faf5ea;--crema-2:#f1e7d3;--card:#fffdf7;
+    --line:#e7dcc6;--muted:#7d715f;--ink:#2b241c;
+  }
   *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:"Manrope",sans-serif;color:var(--ink);background:var(--cream);line-height:1.5}
-  h1,h2,.disp{font-family:"Yeseva One",serif}
-  header{background:var(--char);color:var(--cream);padding:20px;text-align:center}
-  header .disp{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--ember-2)}
-  header h1{font-size:24px;font-weight:600;margin-top:4px}
-  header p{font-size:13px;color:#cbb8a8;margin-top:4px}
-  .panel{max-width:680px;margin:0 auto;padding:22px 18px}
+  body{font-family:"Karla",sans-serif;color:var(--ink);background:var(--crema);line-height:1.5}
+  h1,h2,h3{font-family:"Yeseva One",serif;font-weight:400}
+  .sarape{height:6px;background:repeating-linear-gradient(90deg,var(--verde) 0 46px,var(--oro) 46px 58px,var(--rojo) 58px 104px,var(--crema) 104px 116px)}
+
+  header{background:var(--negro);color:var(--crema);padding:22px 20px 20px;text-align:center;position:relative;overflow:hidden}
+  header .glow{position:absolute;inset:0;background:radial-gradient(55% 60% at 50% 0%,rgba(61,111,93,.3),transparent)}
+  header .in{position:relative}
+  header img{width:min(52vw,190px);height:auto;display:block;margin:0 auto 8px}
+  header .tag{display:inline-block;font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--oro);font-weight:800;background:rgba(234,200,31,.1);border:1px solid rgba(234,200,31,.3);padding:5px 12px;border-radius:999px}
+  header h1{font-size:22px;margin-top:8px;color:var(--crema)}
+  header p{font-size:13px;color:#d8cfbf;margin-top:4px}
+
+  .panel{max-width:680px;margin:0 auto;padding:22px 18px 40px}
+
+  .urls{background:var(--negro);color:var(--crema);border-radius:16px;padding:16px;margin-bottom:18px}
+  .urls h3{font-size:15px;color:var(--verde-2);margin-bottom:8px}
+  .urow{display:flex;align-items:center;gap:8px;background:rgba(250,245,234,.07);border:1px solid rgba(250,245,234,.16);border-radius:11px;padding:9px 12px;margin-top:8px}
+  .urow .lbl{flex:none;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--oro)}
+  .urow .u{flex:1;min-width:0;font-size:12px;color:#d8cfbf;word-break:break-all;font-weight:600}
+  .urow button{flex:none;background:var(--verde);color:#fff;border:none;font-family:inherit;font-weight:800;font-size:11.5px;padding:8px 12px;border-radius:8px;cursor:pointer}
+  .urow button:active{transform:translateY(1px)}
+  .urls .hint2{font-size:11.5px;color:#b8ad99;margin-top:10px;line-height:1.45}
+
   .controls{background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end}
-  .fld{flex:1;min-width:120px}
-  .fld label{display:block;font-size:12px;font-weight:700;margin-bottom:6px}
-  .fld input{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:11px;font-family:inherit;font-size:16px;background:var(--cream)}
-  .fld input:focus{outline:none;border-color:var(--ember)}
-  .btn{background:var(--ember);color:#fff;border:none;font-family:"Manrope";font-weight:800;font-size:15px;padding:13px 20px;border-radius:11px;cursor:pointer}
-  .btn.alt{background:var(--char)}
+  .fld{flex:1;min-width:110px}
+  .fld label{display:block;font-size:12px;font-weight:800;margin-bottom:6px}
+  .fld input{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:11px;font-family:inherit;font-size:16px;background:var(--crema)}
+  .fld input:focus{outline:none;border-color:var(--verde)}
+  .btn{background:var(--verde-osc);color:#fff;border:none;font-family:inherit;font-weight:800;font-size:15px;padding:13px 20px;border-radius:11px;cursor:pointer}
+  .btn.alt{background:var(--rojo)}
   .btn:active{transform:translateY(1px)}
   .hint{font-size:12.5px;color:var(--muted);margin-top:12px}
-  .sizerow{display:flex;align-items:center;gap:8px;margin:16px 0 4px;flex-wrap:wrap}
-  .sizerow span{font-size:12.5px;color:var(--muted);font-weight:600}
-  .szb{border:1.5px solid var(--line);background:var(--card);border-radius:9px;padding:8px 12px;font-family:inherit;font-weight:700;font-size:12.5px;color:var(--muted);cursor:pointer}
-  .szb.active{border-color:var(--ember);background:#fbe9df;color:#a5451f}
+
+  .sizerow{margin:18px 0 4px}
+  .sizerow>span{display:block;font-size:12.5px;color:var(--muted);font-weight:700;margin-bottom:8px}
+  .szgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .szb{border:1.5px solid var(--line);background:var(--card);border-radius:12px;padding:10px 8px;font-family:inherit;font-weight:800;font-size:12.5px;color:var(--muted);cursor:pointer;text-align:center}
+  .szb small{display:block;font-weight:600;font-size:10.5px;margin-top:3px;color:var(--muted)}
+  .szb.active{border-color:var(--rojo);background:#fbe9e7;color:var(--rojo-osc)}
+  .szb.active small{color:var(--rojo-osc)}
+  @media(max-width:420px){.szgrid{grid-template-columns:1fr}}
+
   .toolbar{display:flex;gap:10px;margin:14px 0 18px;align-items:center;flex-wrap:wrap}
   .toolbar .count{font-weight:700;color:var(--muted);font-size:13.5px;margin-left:auto}
   .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+  @media(max-width:420px){.grid{grid-template-columns:1fr}}
   .empty{text-align:center;color:var(--muted);padding:30px 10px;font-size:14px;grid-column:1/-1}
 
-  /* Etiqueta sobria (pantalla + impresión) */
-  .plabel{position:relative;border:1px solid var(--line);border-radius:12px;background:var(--cream);
-    padding:26px 22px 22px;text-align:center;-webkit-print-color-adjust:exact;print-color-adjust:exact;color-adjust:exact}
-  .plabel::before{content:"";position:absolute;inset:7px;border:1px solid rgba(213,98,45,.45);border-radius:8px;pointer-events:none}
-  .plabel .pscan{position:relative;font-family:"Yeseva One",serif;font-weight:600;font-size:21px;font-style:italic;color:var(--ember);line-height:1.1}
-  .plabel .psub{position:relative;font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:6px 0 14px}
+  /* ----- Etiqueta (pantalla + impresión) ----- */
+  .plabel{position:relative;border:1px solid var(--line);border-radius:12px;background:#fffdf7;
+    padding:24px 20px 18px;text-align:center;-webkit-print-color-adjust:exact;print-color-adjust:exact;color-adjust:exact;overflow:hidden}
+  .plabel::before{content:"";position:absolute;inset:7px;border:1px solid rgba(61,111,93,.45);border-radius:8px;pointer-events:none}
+  .plabel .pstripe{position:absolute;left:0;right:0;top:0;height:6px;background:repeating-linear-gradient(90deg,#3d6f5d 0 30px,#eac81f 30px 38px,#c2231b 38px 68px,#faf5ea 68px 76px)}
+  .plabel .pscan{position:relative;font-family:"Yeseva One",serif;font-size:19px;color:var(--rojo);line-height:1.15;margin-top:4px}
+  .plabel .psub{position:relative;font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:800;margin:6px 0 12px}
   .pqr{position:relative;padding:0 6px}
   .pqr canvas,.pqr img{width:100%;height:auto;display:block}
-  .plabel .pmesa{position:relative;font-family:"Yeseva One",serif;font-weight:600;font-size:17px;color:var(--char);margin-top:14px}
-  .plabel .prule{position:relative;width:34px;height:2px;background:var(--ember);border-radius:2px;margin:9px auto 8px}
-  .plabel .pname{position:relative;font-size:8.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:700}
-  .grid .plabel{box-shadow:0 6px 18px rgba(28,21,18,.1)}
+  .plabel .pmesa{position:relative;font-family:"Yeseva One",serif;font-size:18px;color:var(--verde-osc);margin-top:12px}
+  .plabel .prule{position:relative;width:34px;height:2px;background:var(--rojo);border-radius:2px;margin:8px auto 7px}
+  .plabel .pname{position:relative;font-size:8.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:800}
+  .grid .plabel{box-shadow:0 6px 18px rgba(11,11,11,.1)}
 
   #printArea{display:none}
   @media print{
-    header,.controls,.hint,.sizerow,.toolbar,.noprint{display:none!important}
+    header,.sarape,.urls,.controls,.hint,.sizerow,.toolbar,.grid,.noprint{display:none!important}
     body{background:#fff!important}
     .panel{max-width:none;padding:0}
     @page{size:letter;margin:10mm}
@@ -59,38 +92,55 @@
     .psheet.sz-peq{grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr)}
     .psheet.sz-med{grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(2,1fr)}
     .psheet.sz-gra{grid-template-columns:1fr;grid-template-rows:repeat(2,1fr)}
-    .psheet .plabel{height:100%;margin:0;padding:12px 12px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:none;overflow:hidden}
-    .psheet.sz-gra .plabel{max-width:118mm;margin:0 auto}
+    .psheet .plabel{height:100%;margin:0;padding:16px 12px 10px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:none;overflow:hidden;border-radius:10px}
+    .psheet.sz-gra .plabel{max-width:118mm;margin:0 auto;width:100%}
     .psheet .plabel::before{inset:5px}
-    .psheet .pscan{flex:none;font-size:15pt}
+    .psheet .pstripe{height:5px}
+    .psheet .pscan{flex:none;font-size:14pt}
+    .psheet.sz-peq .pscan{font-size:11pt}
     .psheet .psub{flex:none}
     .psheet .pqr{flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;width:100%;padding:6px 0}
     .psheet .pqr img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain}
-    .psheet .pmesa{flex:none;font-size:13pt;margin-top:8px}
+    .psheet .pmesa{flex:none;font-size:13pt;margin-top:6px}
+    .psheet.sz-peq .pmesa{font-size:11pt}
     .psheet .prule,.psheet .pname{flex:none}
   }
 </style>
 </head>
 <body>
 <header>
-  <div class="disp">Administración · uso interno</div>
-  <h1>Generador de QR por mesa</h1>
-  <p>Molcajete Cocina Mexicana</p>
+  <div class="glow"></div>
+  <div class="in">
+    <img src="../img/logo.png" alt="Molcajete Cocina Mexicana">
+    <div class="tag">Administración · uso del restaurante</div>
+    <h1>QR de mesas</h1>
+    <p>Genera, imprime y coloca un código en cada mesa.<br>Al escanearlo, el menú abre con esa mesa ya capturada.</p>
+  </div>
 </header>
+<div class="sarape"></div>
+
 <div class="panel">
+
+  <div class="urls noprint">
+    <h3>Tus dos ligas</h3>
+    <div class="urow"><span class="lbl">Menú</span><span class="u" id="uMenu"></span><button data-copy="uMenu">Copiar</button></div>
+    <div class="urow"><span class="lbl">QR mesas</span><span class="u" id="uAdmin"></span><button data-copy="uAdmin">Copiar</button></div>
+    <div class="hint2">La liga del <b>menú</b> es la que ven tus comensales (el QR de cada mesa la abre con <b>?mesa=1</b>, <b>?mesa=2</b>, etc.). Esta página de <b>QR mesas</b> es solo para ti: guárdala y no la publiques en redes.</div>
+  </div>
+
   <div class="controls noprint">
     <div class="fld"><label>Desde la mesa</label><input type="number" id="from" value="1" min="1" inputmode="numeric"></div>
     <div class="fld"><label>Hasta la mesa</label><input type="number" id="to" value="3" min="1" inputmode="numeric"></div>
     <button class="btn" id="gen">Generar QR</button>
   </div>
-  <div class="hint noprint">Cada QR abre el menú con esa mesa ya seleccionada. Elige el tamaño, genera, imprime y coloca uno en cada mesa.</div>
+  <div class="hint noprint">Si un día agregas mesas, solo cambia el rango, genera e imprime los nuevos.</div>
 
   <div class="sizerow noprint">
-    <span>Tamaño de etiqueta:</span>
-    <div id="sizesel" style="display:flex;gap:8px">
-      <button class="szb" data-s="peq">Chica · 3/fila</button>
-      <button class="szb active" data-s="med">Mediana · 2/fila</button>
-      <button class="szb" data-s="gra">Grande · 1/fila</button>
+    <span>Tamaño de etiqueta al imprimir (hoja carta):</span>
+    <div class="szgrid" id="sizesel">
+      <button class="szb" data-s="peq">Chica<small>9 por hoja · aprox. 6 × 8 cm</small></button>
+      <button class="szb active" data-s="med">Mediana<small>4 por hoja · aprox. 9.5 × 12.5 cm</small></button>
+      <button class="szb" data-s="gra">Grande<small>2 por hoja · aprox. 12 × 12.5 cm</small></button>
     </div>
   </div>
   <div class="toolbar noprint">
@@ -104,10 +154,28 @@
 <div id="printArea"></div>
 
 <script>
-const BASE = location.origin + location.pathname.replace(/\/mesas\/?$/,"/");
+const BASE = location.origin + location.pathname.replace(/\/mesas\/?(index\.html)?$/,"/");
 let labelSize="med";
 
+/* Ligas para compartir */
+document.getElementById("uMenu").textContent=BASE;
+document.getElementById("uAdmin").textContent=location.origin+location.pathname.replace(/\/(index\.html)?$/,"")+"/";
+document.querySelectorAll("[data-copy]").forEach(b=>b.onclick=()=>{
+  const t=document.getElementById(b.dataset.copy).textContent;
+  (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>{
+    b.textContent="Copiado ✓";setTimeout(()=>b.textContent="Copiar",1600);
+  }).catch(()=>{prompt("Copia la liga:",t);});
+});
+
+/* Logo para el centro del QR (se precarga; si falla, el QR sale sin logo) */
+let LOGO=null;
+const logoImg=new Image();
+logoImg.onload=()=>{LOGO=logoImg;generar();};
+logoImg.onerror=()=>{LOGO=null;generar();};
+logoImg.src="../img/logo.png";
+
 function rrl(x,px,py,w,h,r){x.beginPath();x.moveTo(px+r,py);x.arcTo(px+w,py,px+w,py+h,r);x.arcTo(px+w,py+h,px,py+h,r);x.arcTo(px,py+h,px,py,r);x.arcTo(px,py,px+w,py,r);x.closePath();}
+
 function qrCanvas(text,px){
   const cv=document.createElement("canvas");
   if(typeof qrcode==="undefined"){cv.width=px;cv.height=px;return cv;}
@@ -115,24 +183,31 @@ function qrCanvas(text,px){
   const margin=4,scale=Math.max(4,Math.floor(px/(n+margin*2)));
   const size=(n+margin*2)*scale,off=margin*scale;
   cv.width=size;cv.height=size;const ctx=cv.getContext("2d");
-  ctx.fillStyle="#fff";ctx.fillRect(0,0,size,size);ctx.fillStyle="#1B396B";
+  ctx.fillStyle="#fff";ctx.fillRect(0,0,size,size);
+  ctx.fillStyle="#0b0b0b";
   for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(qr.isDark(r,c))ctx.fillRect(off+c*scale,off+r*scale,scale,scale);
-  const L=Math.round(size*0.20),lx=(size-L)/2,ly=(size-L)/2;
-  ctx.fillStyle="#ffffff";rrl(ctx,lx-7,ly-7,L+14,L+14,12);ctx.fill();
-  ctx.fillStyle="#1B396B";rrl(ctx,lx,ly,L,L,10);ctx.fill();
-  const bh=L*0.15,gap=L*0.12,bx=lx+L*0.5;
-  [[0.40,"#2A9D8E",ly+L*0.24],[0.56,"#E8F6F6",ly+L*0.24+bh+gap],[0.72,"#2A9D8E",ly+L*0.24+2*(bh+gap)]]
-    .forEach(([w,col,y])=>{const bw=L*w;ctx.fillStyle=col;rrl(ctx,bx-bw/2,y,bw,bh,bh/2);ctx.fill();});
+  /* Placa central con el logo Molcajete (corrección de error nivel H: aguanta esta cobertura) */
+  if(LOGO){
+    const ratio=LOGO.height/LOGO.width;
+    const lw=Math.round(size*0.30), lh=Math.round(lw*ratio);
+    const pad=Math.round(size*0.025);
+    const bw=lw+pad*2, bh=lh+pad*2, bx=(size-bw)/2, by=(size-bh)/2;
+    ctx.fillStyle="#ffffff";rrl(ctx,bx,by,bw,bh,Math.round(size*0.03));ctx.fill();
+    ctx.strokeStyle="#e7dcc6";ctx.lineWidth=Math.max(1,scale*0.3);
+    rrl(ctx,bx,by,bw,bh,Math.round(size*0.03));ctx.stroke();
+    ctx.drawImage(LOGO,bx+pad,by+pad,lw,lh);
+  }
   return cv;
 }
 function labelHTML(m){
   return '<div class="plabel">'+
+    '<div class="pstripe"></div>'+
     '<div class="pscan">Escanea con tu teléfono</div>'+
     '<div class="psub">para ver el menú y ordenar</div>'+
     '<div class="pqr"></div>'+
     '<div class="pmesa">Mesa '+m+'</div>'+
     '<div class="prule"></div>'+
-    '<div class="pname">Molcajete Cocina Mexicana</div>'+
+    '<div class="pname">Molcajete · Cocina Mexicana</div>'+
   '</div>';
 }
 function rango(){
@@ -146,15 +221,15 @@ function generar(){
   const grid=document.getElementById("grid");grid.innerHTML="";
   for(let m=from;m<=to;m++){
     const div=document.createElement("div");div.innerHTML=labelHTML(m);
-    div.querySelector(".pqr").appendChild(qrCanvas(BASE+"?mesa="+m,300));
+    div.querySelector(".pqr").appendChild(qrCanvas(BASE+"?mesa="+m,340));
     grid.appendChild(div.firstChild);
   }
-  document.getElementById("count").textContent=(to-from+1)+" mesas";
+  document.getElementById("count").textContent=(to-from+1)+(to-from===0?" mesa":" mesas");
 }
 function construyePrint(){
   const [from,to]=rango();
   const perPage = labelSize==="gra"?2:(labelSize==="med"?4:9);
-  const px = labelSize==="gra"?600:(labelSize==="med"?480:360);
+  const px = labelSize==="gra"?700:(labelSize==="med"?560:400);
   const pa=document.getElementById("printArea");pa.innerHTML="";
   let sheet=null,i=0;
   for(let m=from;m<=to;m++,i++){
@@ -169,7 +244,7 @@ function construyePrint(){
 document.getElementById("gen").onclick=generar;
 document.getElementById("sizesel").addEventListener("click",e=>{const b=e.target.closest("[data-s]");if(!b)return;
   labelSize=b.dataset.s;document.querySelectorAll("#sizesel .szb").forEach(x=>x.classList.toggle("active",x===b));});
-document.getElementById("print").onclick=()=>{construyePrint();setTimeout(()=>window.print(),80);};
+document.getElementById("print").onclick=()=>{construyePrint();setTimeout(()=>window.print(),120);};
 generar();
 </script>
 </body>
