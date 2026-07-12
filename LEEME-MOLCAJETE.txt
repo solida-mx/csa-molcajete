@@ -11,13 +11,18 @@
   index.html ......... Menú Premium: el comensal escanea el QR de
                        su mesa, arma su orden (salsa, guiso y
                        guarniciones a elegir) y la comanda llega
-                       al WhatsApp de cocina. Incluye para llevar,
+                       a la PANTALLA DE COMANDAS de la caja
+                       (/mesas/); si el API falla o no está
+                       configurado, sale por WhatsApp como
+                       respaldo. Incluye para llevar,
                        formas de pago, notas a cocina, comanda
                        descargable, sesión de 20 min y sección de
                        ubicación / horarios / Maps / Facebook.
-  mesas/index.html ... QR de mesas (página aparte, uso del dueño,
-                       mismo diseño Molcajete): genera e imprime
-                       las etiquetas. Los QR van en los COLORES DE
+  mesas/index.html ... Panel del restaurante (uso del dueño):
+                       COMANDAS en vivo (con sonido e impresión),
+                       DISPONIBILIDAD de platillos, reporte de
+                       VENTAS con PDF del corte diario, y QR de
+                       mesas para generar e imprimir etiquetas. Los QR van en los COLORES DE
                        LA MARCA (módulos verdes, esquinas rojas) y
                        con el ÍCONO DEL MOLCAJETE al centro.
   img/ ............... logo.png (letrero completo, transparente),
@@ -96,12 +101,38 @@
   • Horarios: L-V 9am-5pm · S-D 10am-5pm
   • Maps: liga directa maps.app.goo.gl/pHbkF9dWme8Bt8Wv8
 
-  CÓMO EDITAR EL MENÚ DESPUÉS
-  Abre index.html y busca el bloque  const MENU={ ... }
+  CÓMO EDITAR EL MENÚ DESPUÉS  (¡CAMBIÓ DE LUGAR!)
+  El bloque  const MENU={ ... }  ahora vive en el archivo
+  menu.js (raíz del repo), porque lo comparten el menú y la
+  página de mesas. Se edita igual que siempre:
   • p: precio · n: nombre · d: descripción · img: emoji
   • ops: opciones que se preguntan al comensal; el número de
     cada opción es el costo extra, ej. ["Barbacoa",5] = +$5.
-  Arriba está el bloque CONFIG (WhatsApp de cocina, minutos).
+  • No cambies los "id" de platillos ya publicados (la
+    disponibilidad guardada se liga a ese id).
+  El bloque CONFIG (WhatsApp de cocina, minutos) sigue en
+  index.html.
+
+  NUEVO EN ESTA VERSIÓN
+  • COMANDAS EN VIVO: las órdenes llegan a /mesas/ (pestaña
+    Comandas) en orden de llegada, con sonido. NADA se imprime
+    solo: la encargada toca una comanda y elige si imprime su
+    ticket o solo la marca entregada. El ticket sale
+    en formato de IMPRESORA TÉRMICA de 58 mm (POS-H58) con el
+    logo del molcajete en blanco y negro (configuración de la
+    impresora: ver INSTRUCCIONES-CLOUDFLARE.txt).
+  • REPORTE DE VENTAS: pestaña Ventas con la jornada del día
+    (1:00 am a 12:59 am), totales, desglose por forma de pago
+    y PDF del corte para guardar/imprimir. Las comandas se
+    borran solas a las 30 h: descargar el PDF cada día.
+  • En /mesas/, cada QR de la lista se puede TOCAR y abre el
+    menú de esa mesa en pestaña nueva (para probar sin
+    escanear). La impresión sale igual que antes.
+  • Pestaña DISPONIBILIDAD: la dueña apaga un platillo cuando
+    se acaba y a los comensales les aparece "Agotado por hoy".
+  • Todo lo anterior requiere UN paso técnico de una sola vez
+    en Cloudflare (gratis, ~5 min):
+    ver INSTRUCCIONES-CLOUDFLARE.txt.
 
 ┌───────────────────────────────────────────────────────────┐
 │  PENDIENTES / SUPUESTOS (confírmalos con Magda)             │
