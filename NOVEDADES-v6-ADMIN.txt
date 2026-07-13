@@ -1,0 +1,116 @@
+╔══════════════════════════════════════════════════════════════════╗
+║   SOLIDA APLICACIONES — Cliente: Molcajete Cocina Mexicana         ║
+║   NOVEDADES v6 · Panel de administración con inicio de sesión      ║
+╚══════════════════════════════════════════════════════════════════╝
+
+┌───────────────────────────────────────────────────────────┐
+│  1. INICIO DE SESIÓN · DOS CUENTAS (v6.2)                   │
+└───────────────────────────────────────────────────────────┘
+
+  CUENTA DE LA CLIENTA (dueña) — ve todo su negocio:
+
+      Usuario:     molcajete
+      Contraseña:  Molcajete-2VwsK1QWiV   (inicial; que la cambie
+                                           ella misma al recibir la app)
+
+  CUENTA DE SOPORTE (tuya) — la aplicación se abre VACÍA:
+
+      Usuario:     soporte
+      Contraseña:  Soporte-xEKGUC2ogj     (inicial; cámbiala tú)
+
+  PRIVACIDAD REAL, DEL LADO DEL SERVIDOR:
+  · Con la cuenta "soporte", el propio worker responde la lista
+    de comandas VACÍA: las ventas y pedidos de la clienta nunca
+    viajan a tu navegador. No es un ocultamiento visual.
+  · Además la cuenta de soporte es SOLO LECTURA: el servidor
+    rechaza (403) cualquier intento de guardar disponibilidad o
+    tocar comandas. Puedes revisar diseño y estructura sin
+    riesgo de mover nada del negocio.
+  · Dentro del panel, la cuenta de soporte muestra un letrero
+    amarillo permanente que lo indica, para total transparencia.
+
+  CAMBIO DE CONTRASEÑA (ambas cuentas, sin tocar código):
+  · En la pantalla de inicio de sesión: "¿Quieres cambiar tu
+    contraseña?" → usuario + contraseña actual + nueva (mínimo
+    8 caracteres) dos veces.
+  · La nueva se guarda HASHEADA (SHA-256 con sal) en el KV; la
+    contraseña inicial escrita en worker.js deja de valer para
+    esa cuenta desde ese momento.
+  · Al cambiarla se cierran todas las sesiones abiertas de esa
+    cuenta (hay que volver a entrar).
+  · SI LA CLIENTA OLVIDA SU CONTRASEÑA: borra en Cloudflare la
+    clave "usr:molcajete" del KV y volverá a valer la inicial de
+    worker.js (dásela y que la cambie de nuevo).
+
+  · La sesión dura 12 horas por dispositivo y caduca sola.
+  · Máximo 8 intentos fallidos cada 10 minutos por IP (aplica a
+    entrar y a cambiar contraseña).
+
+  SOBRE EL MULTIFACTOR (MFA) POR WHATSAPP:
+  · No es viable hoy sin un cambio grande: mandar mensajes de
+    WhatsApp requiere la API de WhatsApp Business (cuenta de
+    Meta o Twilio, verificación del negocio y costo por mensaje).
+  · Alternativa ligera a futuro si se quisiera: código TOTP tipo
+    Google Authenticator (sin mensajes, sin costo); se puede
+    agregar después sobre esta misma base.
+
+┌───────────────────────────────────────────────────────────┐
+│  2. NUEVO DISEÑO DEL PANEL                                  │
+└───────────────────────────────────────────────────────────┘
+
+  · Menú superior estilo app, fijo al hacer scroll y deslizable
+    de izquierda a derecha, con 5 pestañas:
+      🏠 Inicio · 🍽️ Disponibilidad · 🧾 Comandas ·
+      📊 Ventas · 🖨️ Generador QR de menú
+  · Pestaña INICIO (nueva): KPIs de la jornada en vivo:
+      - Vendido hoy y órdenes entregadas
+      - Ticket promedio
+      - Pendientes en cocina (y monto por entregar)
+      - Órdenes en mesa vs. para llevar
+      - Gráfica de ventas por hora
+      - Top 5 de platillos más pedidos
+      - Desglose por forma de pago
+  · Se eliminó el recuadro "Tus dos ligas".
+  · Encabezado más compacto y formal, con el logo del negocio.
+
+┌───────────────────────────────────────────────────────────┐
+│  3. SEGURIDAD ADICIONAL                                     │
+└───────────────────────────────────────────────────────────┘
+
+  · La clave fija anterior ("molcajete-dispo-2026") queda
+    REVOCADA: ya no funciona ni aparece en el código que ven
+    los navegadores.
+  · worker.js, wrangler.jsonc y los archivos .txt ya NO se
+    sirven al público (responden 404).
+  · Las APIs de administración (leer comandas, marcar entregada,
+    guardar disponibilidad) solo funcionan con sesión iniciada.
+  · Lo público sigue igual: los comensales ven el menú y envían
+    su orden sin ningún login.
+
+┌───────────────────────────────────────────────────────────┐
+│  4. LIGAS (nueva estructura, v6.1)                          │
+└───────────────────────────────────────────────────────────┘
+
+  · ADMINISTRACIÓN (liga principal, abre el inicio de sesión):
+        https://csa-molcajete.j23salva.workers.dev/
+
+  · MENÚ de comensales (SOLO llega por los QR de mesa):
+        https://csa-molcajete.j23salva.workers.dev/menu/
+    Los QR generados en el panel abren /menu/?mesa=1, ?mesa=2…
+
+  · Redirecciones automáticas: /mesas/ y /admin llevan a la
+    raíz (panel); /menu (sin diagonal) lleva a /menu/ y
+    conserva el ?mesa=N.
+
+  OJO: como los QR ahora apuntan a /menu/, cualquier QR que se
+  hubiera impreso con una versión anterior (apuntando a la raíz)
+  debe REIMPRIMIRSE desde la pestaña "Generador QR de menú".
+
+┌───────────────────────────────────────────────────────────┐
+│  5. PUBLICAR                                                │
+└───────────────────────────────────────────────────────────┘
+
+  Igual que siempre: sube estos archivos a la RAÍZ del repo
+  csa-molcajete (reemplazando worker.js y mesas/index.html) y
+  Cloudflare publica solo. No hay pasos nuevos en Cloudflare:
+  se usa el mismo KV (binding DISPO) ya configurado.

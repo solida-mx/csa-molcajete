@@ -1,3 +1,9 @@
+⚠️ AVISO v6.1: la estructura cambió. Ahora la RAÍZ (/) es el panel
+de ADMINISTRACIÓN (con inicio de sesión) y el menú de comensales
+vive en /menu/ (los QR abren /menu/?mesa=N). Las ligas y rutas
+mencionadas abajo corresponden a la versión anterior; consulta
+NOVEDADES-v6-ADMIN.txt para lo vigente.
+
 ╔══════════════════════════════════════════════════════════════════╗
 ║   SOLIDA APLICACIONES — Cliente: Molcajete Cocina Mexicana         ║
 ║   Paquete: Premium · Menú Premium ($3,990)                         ║
