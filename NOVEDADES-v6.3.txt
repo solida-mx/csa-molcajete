@@ -1,0 +1,166 @@
+╔══════════════════════════════════════════════════════════════════╗
+║   MOLCAJETE · Configuración en Cloudflare (paso de UNA SOLA VEZ)  ║
+║   Activa: Comandas en vivo · Reporte de Ventas · Disponibilidad   ║
+║   Gratis · ~5 minutos · un solo almacén KV para las 3 cosas       ║
+╚══════════════════════════════════════════════════════════════════╝
+
+QUÉ ACTIVA ESTE PASO
+────────────────────
+El sitio es de archivos estáticos: no tiene base de datos propia.
+Las tres funciones nuevas necesitan un lugar compartido donde
+guardar información:
+
+  · COMANDAS: la orden del comensal viaja a /api/comandas y la
+    pantalla de la caja (/mesas/, pestaña Comandas) la muestra.
+  · REPORTE DE VENTAS: se arma con esas mismas comandas.
+  · DISPONIBILIDAD: los platillos apagados se guardan ahí también.
+
+Ese lugar es el almacenamiento KV de Cloudflare, que ya viene
+incluido gratis en la cuenta donde vive el proyecto. Con UN solo
+namespace se cubren las tres funciones.
+
+MIENTRAS NO HAGAS ESTE PASO, NADA SE ROMPE:
+  · Las órdenes de los comensales llegan por WhatsApp como siempre
+    (respaldo automático).
+  · Las pestañas Comandas, Ventas y Disponibilidad muestran un
+    letrero amarillo avisando que falta la activación.
+
+PASO 1 · Crear el almacén KV
+────────────────────────────
+  1. Entra a dash.cloudflare.com con tu cuenta (la de j23salva).
+  2. Menú izquierdo: Storage & Databases → KV.
+  3. "Create a namespace" → nómbralo:  molcajete-datos
+  4. Al crearlo te muestra un ID (cadena larga tipo a1b2c3d4...).
+     CÓPIALO.
+
+PASO 2 · Pegar el ID en wrangler.jsonc
+──────────────────────────────────────
+  1. Abre el archivo wrangler.jsonc de esta entrega.
+  2. Donde dice "PEGA-AQUI-EL-ID", pega el ID que copiaste
+     (entre las comillas).
+
+PASO 3 · Subir TODO al repo de GitHub
+─────────────────────────────────────
+  Igual que siempre: repo csa-molcajete → Add file → Upload files.
+  Arrastra estos archivos a la RAÍZ del repo (sustituyen a los
+  existentes; NO en una subcarpeta):
+
+    · index.html         (actualizado)
+    · menu.js            (el menú vive aquí desde la v2)
+    · worker.js          (el API: comandas + ventas + dispo)
+    · wrangler.jsonc     (ya con tu ID pegado)
+    · carpeta img/       (sin cambios, no estorba resubirla)
+    · carpeta mesas/     (actualizada)
+
+  Commit sugerido: "Comandas en vivo + reporte de ventas".
+  Espera 1-2 min al despliegue y prueba en incógnito.
+
+  NOTA: si tu Worker NO está conectado al repo con Workers Builds
+  (si al subir a GitHub no se despliega solo), haz el despliegue
+  como acostumbres, o desde el dash del Worker: Settings →
+  Bindings → Add → KV namespace, variable DISPO apuntando al
+  namespace del paso 1, y pega el contenido de worker.js en el
+  editor del Worker.
+
+PASO 4 · Probar (checklist completo)
+────────────────────────────────────
+  □ /mesas/ → pestaña Disponibilidad → letrero VERDE
+    "Sincronización activa".
+  □ Desde un celular, abre /?mesa=1, agrega platillos y toca
+    "Enviar mi orden a cocina" → debe salir la palomita verde
+    "¡Tu orden llegó a cocina!" (ya NO abre WhatsApp).
+  □ En /mesas/ (pestaña Comandas), en unos segundos aparece la
+    comanda. Si ya tocaste la pantalla al menos una vez, suena
+    un "ding" al llegar.
+  □ Toca la comanda → "Imprimir ticket (58 mm)" → en la
+    impresora térmica sale el ticket con el logo del molcajete.
+  □ Toca la comanda → "Ya se entregó" → desaparece de Comandas
+    y aparece como "Entregada" en la pestaña Ventas.
+  □ Pestaña Ventas → "Descargar PDF del corte del día" → baja
+    un PDF con la tabla y los totales.
+  □ Apaga el internet del comensal y prueba enviar: debe abrir
+    WhatsApp como respaldo (la orden no se pierde).
+
+LA CLAVE (seguridad, nivel razonable para este caso)
+────────────────────────────────────────────────────
+  · Solo con la clave se pueden VER las comandas, marcarlas
+    entregadas o cambiar la disponibilidad. Enviar una orden es
+    público (igual que mandar un WhatsApp lo era).
+  · La clave está en dos lugares y debe ser IDÉNTICA:
+      - worker.js         → const CLAVE = "molcajete-dispo-2026"
+      - mesas/index.html  → const CLAVE_SYNC = "molcajete-dispo-2026"
+    Puedes cambiarla por la que quieras (cambia ambas).
+  · Como /mesas/ es una página pública (aunque no se comparta),
+    quien encuentre la liga podría ver la clave en el código.
+    Para este uso el riesgo es menor, pero no reutilices ahí
+    ninguna contraseña real. Recuérdale a la clienta NO publicar
+    la liga de /mesas/.
+
+CÓMO FUNCIONA POR DENTRO (confiabilidad)
+────────────────────────────────────────
+  · Las comandas y ventas se guardan en los SERVIDORES de
+    Cloudflare, no en la computadora del restaurante. Si se va
+    el internet o la luz en el local, lo ya guardado NO se
+    pierde: al volver la conexión, la pantalla se pone al día
+    sola.
+  · Si al comensal le falla la señal al enviar, la orden sale
+    por WhatsApp automáticamente (respaldo).
+  · Una comanda nueva puede tardar de unos segundos hasta ~1
+    minuto en aparecer en la caja (así propaga el KV de
+    Cloudflare). La pantalla revisa cada 12 segundos y suena.
+  · Las comandas se AUTODESTRUYEN a las 30 horas de creadas
+    (así se pidió: la info vive solo un día). El Reporte de
+    Ventas muestra la jornada de 1:00 am a 12:59 am. POR ESO:
+    el corte en PDF debe descargarse cada día; es el registro
+    permanente.
+  · Límite gratuito de Cloudflare KV: 1,000 escrituras/día.
+    Cada orden usa 1-2; alcanza de sobra para cientos de
+    pedidos diarios.
+
+IMPRESORA TÉRMICA DE TICKETS (POS-H58, 58 mm)
+─────────────────────────────────────────────
+  El botón "Imprimir ticket (58 mm)" de cada comanda ya genera
+  el formato exacto para esta impresora: 58 mm de ancho, alto
+  automático, todo en negro puro y con el LOGO DEL MOLCAJETE
+  (el mismo de los QR) convertido a blanco y negro al centro.
+
+  Configuración de una sola vez en la computadora de la caja:
+  1. Instala el driver de la impresora (viene en su CD o se
+     descarga buscando "POS58 printer driver"). Conéctala por
+     USB y enciéndela.
+  2. En Windows: Configuración → Bluetooth y dispositivos →
+     Impresoras → elige la POS-58 → "Establecer como
+     predeterminada" (así imprimir queda a 2 clics).
+  3. La PRIMERA vez que imprimas un ticket desde la página, en
+     el diálogo de impresión revisa:
+       · Destino/Impresora: la POS-58
+       · Tamaño de papel: 58 x 210 mm o "POS58" (según driver)
+       · Márgenes: Ninguno · Escala: 100 %
+       · "Encabezados y pies de página": DESACTIVADO
+     El navegador recuerda estas opciones para las siguientes.
+  4. TIP (opcional): con un acceso directo de Chrome que lleve
+     el argumento  --kiosk-printing , el diálogo de impresión
+     ya no aparece: al tocar "Imprimir ticket" el papel sale de
+     inmediato en la impresora predeterminada. OJO: esto solo
+     ahorra el diálogo; NO imprime nada por su cuenta.
+
+  Notas:
+  · NADA SE IMPRIME AUTOMÁTICAMENTE. Las comandas solo
+    aparecen en pantalla; se imprime únicamente la que la
+    encargada toque y a la que le elija "Imprimir ticket".
+    Puede entregar comandas sin imprimirlas si así lo quiere.
+  · Los emojis se quitan solos del ticket (las térmicas los
+    imprimen como manchas).
+  · El corte de ventas en PDF sigue pensado para hoja carta en
+    una impresora normal; el ticket de 58 mm es solo para las
+    comandas.
+
+AJUSTES RÁPIDOS
+───────────────
+  · Hora del corte del día: mesas/index.html →
+    const CORTE_HORA=1  (1 = la jornada inicia a la 1:00 am).
+  · Volver al modo "solo WhatsApp": index.html →
+    const MODO_COMANDAS="wa".
+  · Horas de vida de una comanda: worker.js → TTL_COMANDA.
+
+  ── Hecho con Solida Aplicaciones ──

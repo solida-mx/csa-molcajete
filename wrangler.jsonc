@@ -1,28 +1,86 @@
-// MOLCAJETE · Configuración del Worker (Cloudflare)
-//
-// ⚠️ IMPORTANTE — EL ÚNICO DATO QUE DEBES PONER A MANO:
-// Sustituye PEGA-AQUI-EL-ID por el ID real de tu namespace KV.
-// Dónde encontrarlo (panel de Cloudflare):
-//   Almacenamiento y bases de datos → KV → tu namespace → columna "ID"
-//   (es una cadena larga de letras y números; cópiala tal cual).
-// Si aún no tienes un namespace: en esa misma pantalla créalo
-// (el nombre puede ser "molcajete-dispo") y copia su ID.
-//
-// NOTA: si en tu repo ya tenías este archivo con el ID puesto,
-// NO lo reemplaces con este; conserva el tuyo (solo asegúrate de
-// que exista también el archivo .assetsignore de esta entrega).
-{
-  "name": "csa-molcajete",
-  "main": "worker.js",
-  "compatibility_date": "2026-07-01",
-  "assets": {
-    "directory": ".",
-    "binding": "ASSETS"
-  },
-  "kv_namespaces": [
-    {
-      "binding": "DISPO",
-      "id": "869f18aa165c45628bbd45a8a4d2fad9"
-    }
-  ]
-}
+╔══════════════════════════════════════════════════════════════════╗
+║   SOLIDA APLICACIONES — Molcajete Cocina Mexicana                 ║
+║   NOVEDADES v6.3 · Corte editable · Impresión · Pantalla de cocina ║
+╚══════════════════════════════════════════════════════════════════╝
+
+Esta versión toca 3 archivos y AGREGA 1 carpeta nueva:
+   · index.html      (panel de administración) — modificado
+   · worker.js        (API) — modificado
+   · cocina/index.html — NUEVO (súbelo tal cual)
+
+No hay pasos nuevos en Cloudflare: usa el MISMO almacén KV (binding
+DISPO) ya configurado.
+
+┌───────────────────────────────────────────────────────────┐
+│  1. REPORTE DE VENTAS: descargar en PDF o EXCEL             │
+└───────────────────────────────────────────────────────────┘
+  · En la pestaña VENTAS hay ahora dos botones:
+      - "Descargar PDF (tamaño carta)"  → botón ROJO. El PDF se
+        genera en hoja CARTA, listo para imprimir.
+      - "Descargar Excel (editable)"    → botón VERDE (tono del
+        ícono de Excel). Baja un archivo .xlsx que la clienta
+        puede editar y guardar en su computadora.
+  · Si por alguna razón no cargara la librería de Excel, el
+    botón verde baja automáticamente un CSV (se abre y edita
+    igual en Excel). No se rompe nada.
+
+┌───────────────────────────────────────────────────────────┐
+│  2. IMPRESIÓN DE COMANDAS (ticket térmico 58 mm)           │
+└───────────────────────────────────────────────────────────┘
+  Lo corregido POR SISTEMA (ya en el código):
+  · El ticket ya no manda símbolos que las térmicas económicas
+    imprimen como "?": las viñetas ▸, el signo ×, el punto medio
+    · y los guiones largos — se cambiaron por texto simple
+    (>, x, -). Los acentos del ticket se normalizan para que no
+    salgan mangled ("Puré" ya no sale como "Purde").
+
+  Lo que ES configuración de la impresora (NO se puede forzar
+  desde la web): quedó un BOTÓN FLOTANTE con ícono de impresora
+  🖨️ en la pestaña COMANDAS. Al tocarlo abre las instrucciones:
+      - Elegir la impresora POS-58 (no "Guardar como PDF").
+      - Tamaño de papel: 58 x 210 mm o "POS58"  (NO "Carta":
+        ese era el motivo del ancho mal).
+      - Márgenes: Ninguno · Escala: 100.
+      - ACTIVAR "Gráficos en segundo plano" (para el logo).
+      - DESACTIVAR "Encabezados y pies de página" (quita la
+        línea rara de "DRIVERS\..." de arriba).
+      - Si aún sale como texto plano/"?": la impresora usa un
+        controlador genérico de solo texto → instalar el driver
+        propio de la POS-58.
+
+┌───────────────────────────────────────────────────────────┐
+│  3. PANTALLA DE COMANDAS PARA COCINA (sin precios)         │
+└───────────────────────────────────────────────────────────┘
+  · En la pestaña COMANDAS hay un botón "Comandas para cocina".
+    Al tocarlo abre en una PESTAÑA NUEVA la página /cocina/,
+    pensada para una pantalla en la cocina:
+      - Muestra SOLO los platillos pedidos (cantidades,
+        opciones y notas). SIN precios, sin total, sin pago.
+      - Se sincroniza sola con administración: cuando ahí se
+        marca una comanda como entregada, aquí desaparece.
+      - Suena (opcional, con el botón "Activar sonido") cuando
+        llega un pedido nuevo.
+
+  DECISIÓN DE DISEÑO (importante):
+  · La pantalla de cocina NO depende de la sesión de 12 h de
+    administración. Se abre con un "pase de cocina" propio que
+    se RENUEVA SOLO mientras la pantalla siga abierta (así no
+    se apaga a media jornada aunque la dueña cierre su sesión o
+    caduquen las 12 h). Si la pantalla se queda cerrada muchas
+    horas, el pase caduca por su cuenta; se vuelve a abrir desde
+    administración con el mismo botón.
+  · Van sincronizadas por los DATOS (las comandas), no por la
+    sesión: es lo que se quería (marcar entregada en admin →
+    se quita en cocina) sin el riesgo de que la pantalla de
+    cocina se apague sola en pleno servicio.
+  · El "pase" entra UNA sola vez por la liga (/cocina/?k=...). Al
+    abrir, la pantalla de cocina lo GUARDA en ese dispositivo y
+    LIMPIA la dirección (ya no queda el ?k=... a la vista en la
+    barra, así no se comparte por accidente). Al recargar la
+    pantalla sigue funcionando con el pase guardado. Es de SOLO
+    lectura y sin precios.
+
+  Ajuste opcional: worker.js → const KDS_HORAS = 14  (horas que
+  vive el pase de cocina sin usarse).
+
+  ── Hecho con Solida Aplicaciones ──

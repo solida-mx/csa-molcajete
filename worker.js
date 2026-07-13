@@ -1,268 +1,86 @@
 /* ============================================================
-   MOLCAJETE · worker.js  (v3 — con inicio de sesión)
-   Sirve los archivos del sitio y expone las APIs sobre el
-   MISMO almacén KV (binding DISPO):
-
-     /api/login            → inicio de sesión de administración
-     /api/logout           → cerrar sesión
-     /api/sesion           → verificar si la sesión sigue viva
-     /api/disponibilidad   → platillos agotados
-     /api/comandas         → comandas en vivo + reporte de ventas
-
-   RUTAS (v3):
-   · /        → panel de ADMINISTRACIÓN (pide usuario y contraseña)
-   · /menu/   → menú de los COMENSALES (los QR abren /menu/?mesa=N)
-
-   SEGURIDAD (v3):
-   · El panel de administración pide USUARIO y CONTRASEÑA.
-   · Al entrar se genera un TOKEN de sesión que vive en KV
-     durante SESION_HORAS y caduca solo.
-   · Ya NO existe la clave fija en el HTML (la anterior
-     "molcajete-dispo-2026" queda revocada al publicar esto).
-   · worker.js, wrangler.jsonc y los .txt ya no se sirven
-     como archivos públicos.
+   MOLCAJETE · MENÚ COMPARTIDO
+   Este archivo lo usan LAS DOS páginas:
+     · index.html        (menú que ven los comensales)
+     · mesas/index.html  (QR de mesas + pestaña Disponibilidad)
+   AQUÍ es donde se edita el menú de ahora en adelante:
+     · p: precio · n: nombre · d: descripción · img: emoji
+     · ops: opciones que se preguntan al comensal; el número de
+       cada opción es el costo extra, ej. ["Barbacoa",5] = +$5.
+     · id: NO lo cambies una vez publicado (la disponibilidad
+       guardada se liga a ese id).
    ============================================================ */
+/* ---------- MENÚ (según menú nuevo julio 2026) ---------- */
+const GUISOS=["Picadillo","Deshebrada","Chicharrón prensado","Queso en rajas","Asado de puerco"];
+const gch=(dpBarb)=>GUISOS.map(g=>[g,0]).concat([["Barbacoa",dpBarb]]);
+const GUAR=["Spaghetti poblano","Arroz blanco con elote","Arroz rojo","Puré de papa","Frijoles refritos","Verduras al vapor","Papas a la francesa","Fusilli a la boloñesa"].map(g=>[g,0]);
+const GUARN=["Arroz blanco con elote","Arroz rojo","Espagueti poblano","Puré de papa","Frijoles refritos","Verduras al vapor","Papas a la francesa"].map(g=>[g,0]);
+const G2=[{t:"Guarnición 1",c:GUAR},{t:"Guarnición 2",c:GUAR}];
+const REFRESCOS=["Coca-Cola","Pepsi","Manzanita Sol","Mirinda","7Up","Squirt"].map(s=>[s,0]);
 
-/* ----- CUENTAS DE ADMINISTRACIÓN -----
-   Dos roles:
-   · "duena"   → ve TODOS los datos del negocio (ventas, comandas…)
-   · "soporte" → entra a la aplicación VACÍA, sin datos del negocio,
-                 solo para revisar estructura y diseño. El propio
-                 servidor le responde listas vacías y le bloquea
-                 cualquier cambio: no es solo un ocultamiento visual.
-
-   Las claves de abajo son solo las INICIALES. En cuanto alguien
-   cambia su contraseña desde la pantalla de inicio de sesión, la
-   nueva se guarda HASHEADA en el KV (clave "usr:<usuario>") y la
-   de este archivo deja de valer para esa cuenta.                  */
-const CUENTAS_INICIALES = {
-  "molcajete": { clave: "Molcajete-2VwsK1QWiV", rol: "duena" },
-  "soporte":   { clave: "Soporte-xEKGUC2ogj",   rol: "soporte" },
+const MENU={
+ "Desayunos":{em:"🍳",items:[
+   {id:"chil",n:"Chilaquiles",d:"Totopos bañados en salsa, gratinados con queso manchego, crema, cebolla morada y cilantro. Con frijoles con queso fresco.",p:120,img:"🥘",
+     ops:[{t:"Salsa",c:[["Verde",0],["Roja",0]]},{t:"Servidos con",c:gch(0).concat([["Huevos al gusto",0]])}]},
+   {id:"tacom",n:"Taco mañanero",d:"Con el guiso de tu elección.",p:20,img:"🌮",
+     ops:[{t:"Tortilla",c:[["Harina",0],["Maíz",0]]},{t:"Guiso",c:gch(5)}]},
+   {id:"tacos5",n:"Orden de 5 tacos",d:"Tacos mañaneros, harina o maíz.",p:90,img:"🌮",
+     ops:[{t:"Tortilla",c:[["Harina",0],["Maíz",0]]},{t:"Guiso",c:gch(25)}]},
+   {id:"burr",n:"Burrito",d:"Tortilla grande de harina rellena del guiso a elegir, con ensalada.",p:50,img:"🌯",
+     ops:[{t:"Guiso",c:gch(20)}]},
+   {id:"gord",n:"Gordita",d:"De harina, acompañada con ensalada.",p:20,img:"🫓",
+     ops:[{t:"Guiso",c:gch(5)}]},
+   {id:"hotc",n:"Hot-cakes",d:"3 hot-cakes con mantequilla, mermelada de fresa y miel de maple.",p:100,img:"🥞"},
+   {id:"gringo",n:"Desayuno gringo",d:"2 huevos al gusto, 2 hot-cakes y 3 tiras de tocino.",p:120,img:"🥓"},
+   {id:"huev",n:"Huevos al gusto",d:"2 huevos acompañados con frijoles refritos.",p:100,img:"🍳",
+     ops:[{t:"Acompañamiento",c:[["Solo frijoles",0]].concat(GUISOS.concat(["Barbacoa"]).map(g=>[g,20]))}]},
+   {id:"omel",n:"Omelette",d:"Jamón, queso, chile, tomate y cebolla. Con frijoles refritos.",p:125,img:"🥚"}]},
+ "Comidas":{em:"🍽️",nota:"Cada platillo marcado con «elige tus guarniciones» incluye 2 guarniciones: spaghetti poblano, arroz blanco con elote, arroz rojo, puré de papa, frijoles refritos, verduras al vapor, papas a la francesa o fusilli a la boloñesa.",items:[
+   {id:"ensu",n:"Enchiladas suizas",d:"4 piezas de pollo bañadas en salsa verde, mezcla de quesos y crema.",p:130,img:"🫔",ops:G2},
+   {id:"enro",n:"Enchiladas rojas",d:"4 piezas bañadas en salsa de chile guajillo y crema.",p:130,img:"🫔",
+     ops:[{t:"Relleno",c:[["Pollo",0],["Queso",0]]}].concat(G2)},
+   {id:"ento",n:"Entomatadas",d:"4 piezas de pollo bañadas en salsa de tomate, quesos y crema.",p:130,img:"🍅",ops:G2},
+   {id:"enchi",n:"Enchipotladas",d:"4 piezas de pollo en salsa cremosa de chipotle, quesos y crema.",p:130,img:"🌶️",ops:G2},
+   {id:"chrel",n:"Chile relleno",d:"Chile poblano capeado.",p:140,img:"🫑",
+     ops:[{t:"Preparación",c:[["De picadillo",0],["De queso",0],["Ambos, bañado en crema de chipotle",15]]}].concat(G2)},
+   {id:"milemp",n:"Milanesa empanizada",d:"Empanizado dorado y crujiente.",p:130,img:"🍗",
+     ops:[{t:"Carne",c:[["Pollo",0],["Res",10]]}].concat(G2)},
+   {id:"alb",n:"Albóndigas rellenas",d:"Rellenas de queso crema.",p:130,img:"🧆",
+     ops:[{t:"Salsa",c:[["Crema de chipotle",0],["Salsa roja italiana",0]]}].concat(G2)},
+   {id:"milpla",n:"Milanesa a la plancha",d:"De pollo, jugosa y a la plancha.",p:130,img:"🍗",ops:G2},
+   {id:"enspo",n:"Ensalada de pollo",d:"Ensalada fresca con pollo.",p:130,img:"🥗",
+     ops:[{t:"Pollo",c:[["A la plancha",0],["Empanizado",20]]}]},
+   {id:"hamb",n:"Hamburguesa mexicana",d:"Con papas fritas y jalapeño.",p:120,img:"🍔"},
+   {id:"club",n:"Club sándwich",d:"Pollo en chipotle, jamón, queso, guacamole y mayonesa. Con papas fritas y jalapeños.",p:140,img:"🥪"}]},
+ "Para los niños":{em:"🧒",nota:"Todo a $80. Cada opción incluye 1 guarnición a elegir.",items:[
+   {id:"nmigas",n:"Huevo con migas",p:80,img:"🍳",ops:[{t:"Guarnición",c:GUARN}]},
+   {id:"njam",n:"Huevo con jamón o salchicha",p:80,img:"🍳",
+     ops:[{t:"Con",c:[["Jamón",0],["Salchicha",0]]},{t:"Guarnición",c:GUARN}]},
+   {id:"nhot",n:"2 hot-cakes",p:80,img:"🥞",ops:[{t:"Guarnición",c:GUARN}]},
+   {id:"ntacos",n:"2 tacos",p:80,img:"🌮",
+     ops:[{t:"Tortilla",c:[["Harina",0],["Maíz",0]]},{t:"Guarnición",c:GUARN}]},
+   {id:"nsinc",n:"Sincronizada",p:80,img:"🧀",ops:[{t:"Guarnición",c:GUARN}]},
+   {id:"ntiras",n:"Tiras de pollo empanizadas",p:80,img:"🍗",ops:[{t:"Guarnición",c:GUARN}]},
+   {id:"nhotdog",n:"Hot dog",p:80,img:"🌭",ops:[{t:"Guarnición",c:GUARN}]},
+   {id:"ngord",n:"2 gorditas de harina",p:80,img:"🫓",ops:[{t:"Guarnición",c:GUARN}]}]},
+ "Bebidas":{em:"🥤",items:[
+   {id:"agua",n:"Agua natural",d:"500 ml.",p:10,img:"💧"},
+   {id:"fresca",n:"Agua fresca",d:"500 ml, hecha en casa.",p:30,img:"🍹",
+     ops:[{t:"Sabor",c:[["Jamaica con guayaba",0],["Pepino con limón",0]]}]},
+   {id:"cafeam",n:"Café americano",p:25,img:"☕"},
+   {id:"cafeolla",n:"Café de olla",p:30,img:"☕"},
+   {id:"ref4",n:"Refresco 400 ml",p:20,img:"🥤",ops:[{t:"Sabor",c:REFRESCOS}]},
+   {id:"ref6",n:"Refresco 600 ml",p:30,img:"🥤",ops:[{t:"Sabor",c:REFRESCOS}]}]},
+ "Postres":{em:"🍮",items:[
+   {id:"pay",n:"Pay de limón",p:30,img:"🍰"},
+   {id:"arrozl",n:"Arroz con leche",p:25,img:"🍮",
+     ops:[{t:"Estilo",c:[["Natural",0],["Con pasas",5]]}]}]},
+ "Extras":{em:"🌽",items:[
+   {id:"tort",n:"Orden de tortillas",p:10,img:"🫓"},
+   {id:"guac",n:"Guacamole y totopos",p:30,img:"🥑"},
+   {id:"toto",n:"Totopos",p:15,img:"🌽"},
+   {id:"papas",n:"Papas a la francesa",p:30,img:"🍟"},
+   {id:"huevoex",n:"Huevo al gusto",p:10,img:"🍳"},
+   {id:"guarex",n:"Guarnición extra",p:25,img:"🍚",ops:[{t:"Elige",c:GUAR}]}]}
 };
-
-const SESION_HORAS = 12;              // duración de la sesión de administración
-const MAX_INTENTOS = 8;               // intentos de login fallidos por IP…
-const VENTANA_INTENTOS = 600;         // …en esta ventana (segundos)
-const TTL_COMANDA = 30 * 3600;        // las comandas viven 30 h y se borran solas
-
-const JSONH = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" };
-const j = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: JSONH });
-
-/* Hash de contraseña (SHA-256 con sal aleatoria por cuenta) */
-async function hashClave(clave, salt) {
-  const data = new TextEncoder().encode(salt + "\u00b7" + clave);
-  const h = await crypto.subtle.digest("SHA-256", data);
-  return [...new Uint8Array(h)].map(b => b.toString(16).padStart(2, "0")).join("");
-}
-
-/* Devuelve el rol si usuario+clave son correctos; si no, null.
-   Primero busca la contraseña cambiada en KV; si no hay, usa la inicial. */
-async function verificaCuenta(env, usuario, clave) {
-  const cuenta = CUENTAS_INICIALES[usuario];
-  if (!cuenta || typeof clave !== "string" || !clave) return null;
-  const guardado = await env.DISPO.get("usr:" + usuario);
-  if (guardado) {
-    try {
-      const { salt, hash } = JSON.parse(guardado);
-      return (await hashClave(clave, salt)) === hash ? cuenta.rol : null;
-    } catch (e) { return null; }
-  }
-  return clave === cuenta.clave ? cuenta.rol : null;
-}
-
-/* ¿La petición trae un token de sesión válido? Devuelve {u, rol} o null. */
-async function sesionDe(request, env) {
-  const t = request.headers.get("x-token") || "";
-  if (!/^[A-Za-z0-9-]{20,60}$/.test(t)) return null;
-  const v = await env.DISPO.get("tok:" + t);
-  if (!v) return null;
-  try { return JSON.parse(v); } catch (e) { return null; }
-}
-
-/* Al cambiar una contraseña se cierran las sesiones abiertas de esa cuenta */
-async function revocaSesiones(env, usuario) {
-  const lista = await env.DISPO.list({ prefix: "tok:" });
-  for (const k of lista.keys) {
-    const v = await env.DISPO.get(k.name);
-    if (!v) continue;
-    try { if (JSON.parse(v).u === usuario) await env.DISPO.delete(k.name); } catch (e) {}
-  }
-}
-
-export default {
-  async fetch(request, env) {
-    const url = new URL(request.url);
-    const path = url.pathname;
-
-    /* ---------------- LOGIN / SESIÓN ---------------- */
-    if (path === "/api/login" && request.method === "POST") {
-      const ip = request.headers.get("cf-connecting-ip") || "sin-ip";
-      const failKey = "fail:" + ip;
-      const fallos = parseInt(await env.DISPO.get(failKey)) || 0;
-      if (fallos >= MAX_INTENTOS) return j({ error: "Demasiados intentos. Espera 10 minutos e inténtalo de nuevo." }, 429);
-
-      let d; try { d = await request.json(); } catch (e) { return j({ error: "json invalido" }, 400); }
-      const usuario = typeof d.usuario === "string" ? d.usuario.trim().toLowerCase() : "";
-      const rol = await verificaCuenta(env, usuario, d.clave);
-
-      if (rol) {
-        const token = crypto.randomUUID();
-        await env.DISPO.put("tok:" + token, JSON.stringify({ u: usuario, rol, ts: Date.now() }),
-          { expirationTtl: SESION_HORAS * 3600 });
-        await env.DISPO.delete(failKey);
-        return j({ ok: true, token, usuario, rol, horas: SESION_HORAS });
-      }
-      await env.DISPO.put(failKey, String(fallos + 1), { expirationTtl: VENTANA_INTENTOS });
-      return j({ error: "Usuario o contraseña incorrectos." }, 401);
-    }
-
-    /* Cambio de contraseña desde la pantalla de inicio de sesión
-       (cualquiera de las dos cuentas; pide la contraseña actual). */
-    if (path === "/api/cambiar-clave" && request.method === "POST") {
-      const ip = request.headers.get("cf-connecting-ip") || "sin-ip";
-      const failKey = "fail:" + ip;
-      const fallos = parseInt(await env.DISPO.get(failKey)) || 0;
-      if (fallos >= MAX_INTENTOS) return j({ error: "Demasiados intentos. Espera 10 minutos e inténtalo de nuevo." }, 429);
-
-      let d; try { d = await request.json(); } catch (e) { return j({ error: "json invalido" }, 400); }
-      const usuario = typeof d.usuario === "string" ? d.usuario.trim().toLowerCase() : "";
-      const nueva = typeof d.claveNueva === "string" ? d.claveNueva : "";
-      if (nueva.length < 8 || nueva.length > 60) {
-        return j({ error: "La contraseña nueva debe tener entre 8 y 60 caracteres." }, 400);
-      }
-      const rol = await verificaCuenta(env, usuario, d.claveActual);
-      if (!rol) {
-        await env.DISPO.put(failKey, String(fallos + 1), { expirationTtl: VENTANA_INTENTOS });
-        return j({ error: "Usuario o contraseña actual incorrectos." }, 401);
-      }
-      const salt = crypto.randomUUID();
-      await env.DISPO.put("usr:" + usuario, JSON.stringify({ salt, hash: await hashClave(nueva, salt), t: Date.now() }));
-      await revocaSesiones(env, usuario);   // cierra sesiones abiertas de esa cuenta
-      await env.DISPO.delete(failKey);
-      return j({ ok: true });
-    }
-
-    if (path === "/api/logout" && request.method === "POST") {
-      const t = request.headers.get("x-token") || "";
-      if (/^[A-Za-z0-9-]{20,60}$/.test(t)) await env.DISPO.delete("tok:" + t);
-      return j({ ok: true });
-    }
-
-    if (path === "/api/sesion" && request.method === "GET") {
-      const s = await sesionDe(request, env);
-      if (!s) return j({ error: "sesion invalida" }, 401);
-      return j({ ok: true, usuario: s.u, rol: s.rol });
-    }
-
-    /* ---------------- DISPONIBILIDAD ---------------- */
-    if (path === "/api/disponibilidad") {
-      if (request.method === "GET") {           // pública: la lee el menú de los comensales
-        const guardado = await env.DISPO.get("estado");
-        return new Response(guardado || '{"off":[]}', { headers: JSONH });
-      }
-      if (request.method === "POST") {          // solo administración
-        const s = await sesionDe(request, env);
-        if (!s) return j({ error: "sesion invalida" }, 401);
-        if (s.rol === "soporte") return j({ error: "Cuenta de soporte: es solo de lectura y no puede modificar el negocio." }, 403);
-        let data; try { data = await request.json(); } catch (e) { return j({ error: "json invalido" }, 400); }
-        if (!data || !Array.isArray(data.off)) return j({ error: "formato invalido" }, 400);
-        const limpio = { off: data.off.filter(x => typeof x === "string" && x.length <= 40).slice(0, 300), t: Date.now() };
-        await env.DISPO.put("estado", JSON.stringify(limpio));
-        return j({ ok: true });
-      }
-      return j({ error: "metodo no permitido" }, 405);
-    }
-
-    /* ---------------- COMANDAS / VENTAS ---------------- */
-    if (path === "/api/comandas") {
-
-      // Los COMENSALES envían su orden (público, igual que enviar un WhatsApp)
-      if (request.method === "POST") {
-        let d; try { d = await request.json(); } catch (e) { return j({ error: "json invalido" }, 400); }
-        const s = (v, max) => (typeof v === "string" ? v.slice(0, max) : "");
-        if (!d || !Array.isArray(d.items) || !d.items.length || d.items.length > 60) return j({ error: "orden invalida" }, 400);
-        const items = d.items.map(it => ({
-          q: Math.min(99, Math.max(1, parseInt(it.q) || 1)),
-          n: s(it.n, 90),
-          sel: s(it.sel, 240),
-          imp: Math.min(99999, Math.max(0, Math.round(Number(it.imp) || 0))),
-        }));
-        const total = Math.min(999999, Math.max(0, Math.round(Number(d.total) || 0)));
-        const ts = Date.now();
-        const comanda = {
-          v: 1, ts,
-          vence: ts + TTL_COMANDA * 1000,
-          folio: s(d.folio, 14) || ("CMD-" + String(ts).slice(-5)),
-          tipo: d.tipo === "llevar" ? "llevar" : "mesa",
-          destino: s(d.destino, 120),
-          pago: ["Efectivo", "Tarjeta", "Transferencia"].includes(d.pago) ? d.pago : "Efectivo",
-          notas: s(d.notas, 300),
-          items, total,
-          estado: "activa",
-        };
-        const id = "cmd:" + ts + "-" + Math.random().toString(36).slice(2, 6);
-        await env.DISPO.put(id, JSON.stringify(comanda), { expirationTtl: TTL_COMANDA });
-        return j({ ok: true, id, folio: comanda.folio });
-      }
-
-      // La CAJA lista todas las comandas (requiere sesión)
-      if (request.method === "GET") {
-        const s = await sesionDe(request, env);
-        if (!s) return j({ error: "sesion invalida" }, 401);
-        // PRIVACIDAD: la cuenta de soporte recibe la lista VACÍA desde el
-        // servidor; las ventas y comandas de la clienta no salen de aquí.
-        if (s.rol === "soporte") return j({ comandas: [], soporte: true });
-        const lista = await env.DISPO.list({ prefix: "cmd:" });
-        const out = [];
-        for (const k of lista.keys) {
-          const v = await env.DISPO.get(k.name);
-          if (!v) continue;
-          try { const o = JSON.parse(v); o.id = k.name; out.push(o); } catch (e) {}
-        }
-        out.sort((a, b) => a.ts - b.ts);   // primeras entradas, primeras salidas
-        return j({ comandas: out });
-      }
-
-      return j({ error: "metodo no permitido" }, 405);
-    }
-
-    // La CAJA cambia el estado de una comanda (hecha / activa)
-    if (path === "/api/comandas/estado" && request.method === "POST") {
-      const s = await sesionDe(request, env);
-      if (!s) return j({ error: "sesion invalida" }, 401);
-      if (s.rol === "soporte") return j({ error: "Cuenta de soporte: es solo de lectura y no puede modificar el negocio." }, 403);
-      let d; try { d = await request.json(); } catch (e) { return j({ error: "json invalido" }, 400); }
-      if (!d || typeof d.id !== "string" || !d.id.startsWith("cmd:")) return j({ error: "id invalido" }, 400);
-      if (!["hecha", "activa"].includes(d.estado)) return j({ error: "estado invalido" }, 400);
-      const v = await env.DISPO.get(d.id);
-      if (!v) return j({ error: "no existe" }, 404);
-      let o; try { o = JSON.parse(v); } catch (e) { return j({ error: "dato corrupto" }, 500); }
-      o.estado = d.estado;
-      o.hechaTs = d.estado === "hecha" ? Date.now() : null;
-      // conservar la fecha de caducidad original (KV borra la comanda solo)
-      const restante = Math.max(60, Math.round(((o.vence || Date.now() + 3600000) - Date.now()) / 1000));
-      await env.DISPO.put(d.id, JSON.stringify(o), { expirationTtl: restante });
-      return j({ ok: true });
-    }
-
-    /* ---------------- RUTAS Y PROTECCIÓN DE ARCHIVOS ---------------- */
-
-    /* La RAÍZ (/) es el panel de administración (index.html) y el
-       menú de los comensales vive en /menu/ (los QR abren
-       /menu/?mesa=1, ?mesa=2…). Rutas viejas y atajos → a su lugar: */
-    if (path === "/mesas" || path === "/mesas/" || path === "/admin" || path === "/admin/") {
-      return Response.redirect(url.origin + "/", 301);
-    }
-    if (path === "/menu") {           // sin diagonal final: conservar ?mesa=N
-      return Response.redirect(url.origin + "/menu/" + url.search, 301);
-    }
-
-    // Estos archivos NUNCA se sirven al público (contienen configuración)
-    if (path === "/worker.js" || path === "/wrangler.jsonc" || path.toLowerCase().endsWith(".txt")) {
-      return new Response("No encontrado", { status: 404 });
-    }
-
-    // Todo lo demás: servir los archivos estáticos del repo
-    return env.ASSETS.fetch(request);
-  },
-};
+const ALL={};Object.values(MENU).forEach(c=>c.items.forEach(it=>ALL[it.id]=it));
