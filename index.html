@@ -9,6 +9,7 @@
 <script src="menu.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Yeseva+One&family=Karla:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -265,9 +266,52 @@
   .vtab .est.activa{background:#fdf3e2;color:#8a5a2a}
   .vtab .vac td{text-align:center;color:var(--muted);padding:22px}
 
+  /* ----- Botones de exportación del corte (PDF rojo · Excel verde) ----- */
+  .exprow{display:grid;grid-template-columns:1fr;gap:10px;margin-top:16px}
+  @media(min-width:520px){.exprow{grid-template-columns:1fr 1fr}}
+  .btn.pdf{background:var(--rojo)}
+  .btn.pdf:hover{background:var(--rojo-osc)}
+  .btn.xls{background:#217346}          /* verde del ícono de Excel */
+  .btn.xls:hover{background:#1a5c38}
+  .btn .bi{margin-right:7px;font-size:16px;vertical-align:-1px}
+
+  /* ----- Botón "Comandas para cocina" ----- */
+  .cocina-cta{display:flex;align-items:center;gap:12px;background:var(--negro);color:var(--crema);
+    border:1.5px solid #2c2620;border-radius:14px;padding:13px 16px;margin:2px 0 16px;flex-wrap:wrap}
+  .cocina-cta .txt{flex:1;min-width:180px}
+  .cocina-cta .txt b{display:block;font-size:14px;color:var(--oro)}
+  .cocina-cta .txt small{color:#b8ad99;font-size:12px}
+  .cocina-cta button{background:var(--verde-osc);color:#fff;border:none;font-family:inherit;font-weight:800;
+    font-size:14px;padding:12px 16px;border-radius:11px;cursor:pointer;white-space:nowrap}
+  .cocina-cta button:active{transform:translateY(1px)}
+
+  /* ----- Botón flotante de configuración de impresión ----- */
+  .fabprint{position:fixed;right:16px;bottom:18px;z-index:75;display:none;align-items:center;gap:9px;
+    background:var(--rojo);color:#fff;border:none;font-family:inherit;font-weight:800;font-size:13.5px;
+    padding:13px 17px;border-radius:999px;cursor:pointer;box-shadow:0 8px 24px rgba(11,11,11,.32)}
+  .fabprint.show{display:flex}
+  .fabprint .ic{font-size:18px;line-height:1}
+  .fabprint:active{transform:translateY(1px)}
+  @media(max-width:520px){.fabprint .lbl{display:none}.fabprint{padding:14px}}
+
+  /* ----- Modal de instrucciones de impresión ----- */
+  .cfgmodal{position:fixed;inset:0;z-index:90;background:rgba(10,8,6,.72);display:none;align-items:center;justify-content:center;padding:16px}
+  .cfgmodal.show{display:flex}
+  .cfgbox{background:var(--crema);width:100%;max-width:560px;max-height:88vh;overflow:auto;border-radius:18px;padding:22px 20px 24px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+  .cfgbox h3{font-size:20px;color:var(--rojo-osc);display:flex;align-items:center;gap:9px;margin-bottom:4px}
+  .cfgbox .lead{font-size:13px;color:var(--muted);margin-bottom:16px}
+  .cfgbox h4{font-family:"Karla",sans-serif;font-weight:800;font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--verde-osc);margin:16px 0 8px}
+  .cfgstep{display:flex;gap:11px;padding:9px 0;border-bottom:1px dashed var(--line);font-size:14px}
+  .cfgstep:last-of-type{border-bottom:none}
+  .cfgstep .n{flex:none;width:24px;height:24px;border-radius:50%;background:var(--verde-osc);color:#fff;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .cfgstep b{color:var(--ink)}
+  .cfgstep .k{background:#efe6d2;border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-weight:800;font-size:12.5px;white-space:nowrap}
+  .cfgnote{background:#fdf3e2;border:1px solid #ecc98a;border-radius:11px;padding:11px 13px;font-size:12.5px;color:#8a5a2a;font-weight:600;margin-top:14px}
+  .cfgbox .cerrar{display:block;width:100%;background:var(--negro);color:var(--crema);border:none;font-family:inherit;font-weight:800;font-size:15px;padding:14px;border-radius:12px;cursor:pointer;margin-top:18px}
+
   #printArea{display:none}
   @media print{
-    #login,header,.sarape,.topnav,.controls,.hint,.sizerow,.toolbar,.grid,.noprint,#paneInicio,#paneComandas,#paneDispo,#paneVentas,.dsaving,.cmodal{display:none!important}
+    #login,header,.sarape,.topnav,.controls,.hint,.sizerow,.toolbar,.grid,.noprint,#paneInicio,#paneComandas,#paneDispo,#paneVentas,.dsaving,.cmodal,.fabprint,.cfgmodal,.cocina-cta{display:none!important}
     /* ticket de comanda */
     .tk{width:92mm;margin:0 auto;color:#000;font-family:"Karla",sans-serif}
     .tk .h{text-align:center;border-bottom:2px solid #000;padding-bottom:8px;margin-bottom:10px}
@@ -438,6 +482,13 @@
   <!-- ============ COMANDAS ============ -->
   <div id="paneComandas" class="tabpane">
     <div class="shead"><h2>Comandas en vivo</h2><p>Pedidos en curso · primero el más antiguo.</p></div>
+    <div class="cocina-cta noprint" id="cocinaCta">
+      <div class="txt">
+        <b>👨‍🍳 Pantalla para cocina</b>
+        <small>Abre las comandas <b>sin precios</b> en una ventana aparte para la pantalla de la cocina. Se sincroniza sola con esta página.</small>
+      </div>
+      <button id="btnCocina">Comandas para cocina ↗</button>
+    </div>
     <div class="dstatus" id="cStatus"></div>
     <div class="crow-top noprint">
       <span class="chead" id="cHead"></span>
@@ -457,8 +508,11 @@
       <button class="btn mini" id="vRefresh">⟳ Actualizar</button>
     </div>
     <div class="vwrap"><table class="vtab" id="vTab"></table></div>
-    <button class="btn alt" id="vPDF" style="width:100%;margin-top:16px">📄 Descargar PDF del corte del día</button>
-    <div class="dnote" style="margin-top:14px">Aquí se registran <b>todas las órdenes del día</b> (de la <b>1:00 am</b> a las <b>12:59 am</b> del día siguiente). Después de ese plazo se borran solas, así que <b>descarga el PDF al hacer tu corte</b> para conservarlo o imprimirlo.</div>
+    <div class="exprow">
+      <button class="btn pdf" id="vPDF"><span class="bi">📄</span>Descargar PDF (tamaño carta)</button>
+      <button class="btn xls" id="vXLS"><span class="bi">📊</span>Descargar Excel (editable)</button>
+    </div>
+    <div class="dnote" style="margin-top:14px">Aquí se registran <b>todas las órdenes del día</b> (de la <b>1:00 am</b> a las <b>12:59 am</b> del día siguiente). Después de ese plazo se borran solas, así que <b>descarga tu corte al cerrar el día</b> para conservarlo. El <b>PDF</b> sale en <b>hoja carta</b> listo para imprimir; el <b>Excel</b> lo puedes editar y guardar en tu computadora.</div>
   </div><!-- /paneVentas -->
 
   <!-- ============ GENERADOR QR ============ -->
@@ -498,6 +552,34 @@
     <button class="bimp" id="cmImp">🖨️ Imprimir ticket (58 mm)</button>
     <button class="bok" id="cmHecha">✅ Ya se entregó · quitar de la vista</button>
     <button class="bcerrar" id="cmCerrar">Cerrar</button>
+  </div>
+</div>
+
+<!-- Botón flotante: cómo configurar la impresora (solo visible en Comandas) -->
+<button class="fabprint noprint" id="fabPrint" title="Cómo configurar la impresora">
+  <span class="ic">🖨️</span><span class="lbl">Configurar impresora</span>
+</button>
+
+<!-- Instrucciones de configuración de la impresora térmica -->
+<div class="cfgmodal" id="cfgModal">
+  <div class="cfgbox">
+    <h3>🖨️ Configurar la impresión de comandas</h3>
+    <div class="lead">Si el ticket sale como texto amontonado, con símbolos «?» o con una línea rara de «DRIVERS\…» arriba, es la <b>configuración de la impresora</b>, no la página. Ajusta esto <b>una sola vez</b> en la computadora de la caja:</div>
+
+    <h4>En el cuadro de impresión (al tocar «Imprimir ticket»)</h4>
+    <div class="cfgstep"><span class="n">1</span><div><b>Destino / Impresora:</b> elige la <b>POS-58</b> (la impresora térmica), no «Guardar como PDF» ni otra.</div></div>
+    <div class="cfgstep"><span class="n">2</span><div><b>Tamaño del papel:</b> <span class="k">58 x 210 mm</span> o <span class="k">POS58</span>. <b>No dejes «Carta»</b>: por eso sale mal el ancho.</div></div>
+    <div class="cfgstep"><span class="n">3</span><div><b>Márgenes:</b> <span class="k">Ninguno</span> · <b>Escala:</b> <span class="k">100</span>.</div></div>
+    <div class="cfgstep"><span class="n">4</span><div><b>Activa</b> <span class="k">Gráficos en segundo plano</span> (o «Más opciones»): así se imprime el logo del molcajete.</div></div>
+    <div class="cfgstep"><span class="n">5</span><div><b>Desactiva</b> <span class="k">Encabezados y pies de página</span>: eso quita la línea rara de «DRIVERS\…» de arriba.</div></div>
+
+    <h4>Si aún sale como texto plano o con «?»</h4>
+    <div class="cfgstep"><span class="n">6</span><div>La impresora está usando un <b>controlador genérico de solo texto</b>. Instala el <b>driver propio de la POS-58</b> (viene en su CD o se busca como «POS58 printer driver») y vuelve a elegirla en el paso 1. Con el driver gráfico correcto, el logo y el formato salen bien.</div></div>
+    <div class="cfgstep"><span class="n">7</span><div>En Windows: <b>Configuración → Bluetooth y dispositivos → Impresoras → POS-58 → «Establecer como predeterminada»</b> para imprimir en 2 clics.</div></div>
+
+    <div class="cfgnote">💡 El navegador <b>recuerda</b> estos ajustes para las siguientes veces. Solo hay que hacerlo bien una vez. La página ya envía el ticket a 58 mm y con caracteres simples para que se lea aunque el driver sea limitado.</div>
+
+    <button class="cerrar" id="cfgCerrar">Entendido, cerrar</button>
   </div>
 </div>
 
@@ -549,6 +631,7 @@ function muestraApp(){
   const rolTxt=ROL==="soporte"?"cuenta de soporte":(ROL==="duena"?"dueña":"");
   $("hUser").textContent=(u?("Sesión de "+u):"Sesión iniciada")+(rolTxt?" · "+rolTxt:"");
   $("sopBanner").classList.toggle("show",ROL==="soporte");
+  $("cocinaCta").style.display=(ROL==="soporte")?"none":"";
   saludoInicio();
   if(!appIniciada){appIniciada=true;arranque();}
   else cargaComandas();
@@ -725,6 +808,8 @@ function abreTab(t,btn){
   const b=btn||document.querySelector('.topnav [data-tab="'+t+'"]');
   if(b&&b.scrollIntoView)try{b.scrollIntoView({behavior:"smooth",inline:"center",block:"nearest"});}catch(e){}
   window.scrollTo({top:0,behavior:"smooth"});
+  /* el botón flotante de configuración de impresora solo aparece en Comandas */
+  $("fabPrint").classList.toggle("show",t==="Comandas");
   if(t==="Dispo")initDispo();
   if(t==="Ventas")renderVentas();
   if(t==="Inicio")renderInicio();
@@ -903,16 +988,25 @@ function tkHTML(c){
     '<div class="h"><div class="nm">MOLCAJETE</div><div class="sb">Cocina Mexicana</div></div>'+
     '<div class="meta">Folio '+c.folio+' · '+horaMX(c.ts)+'</div>'+
     '<div class="dst">'+c.destino+'</div>'+
-    '<table>'+c.items.map(it=>'<tr><td class="q">'+it.q+'×</td><td>'+it.n+(it.sel?'<div class="sel">▸ '+it.sel+'</div>':'')+'</td><td class="i">'+pesos(it.imp)+'</td></tr>').join("")+'</table>'+
-    (c.notas?'<div class="nts">📝 '+c.notas+'</div>':'')+
-    '<div class="tot"><span>TOTAL · '+c.pago+'</span><span>'+pesos(c.total)+'</span></div>'+
-    '<div class="pie">— Comanda del menú digital —</div>'+
+    '<table>'+c.items.map(it=>'<tr><td class="q">'+it.q+'x</td><td>'+tkTxt(it.n)+(it.sel?'<div class="sel">&gt; '+tkTxt(it.sel)+'</div>':'')+'</td><td class="i">'+pesos(it.imp)+'</td></tr>').join("")+'</table>'+
+    (c.notas?'<div class="nts">NOTAS: '+tkTxt(c.notas)+'</div>':'')+
+    '<div class="tot"><span>TOTAL - '+tkTxt(c.pago)+'</span><span>'+pesos(c.total)+'</span></div>'+
+    '<div class="pie">- Comanda del menu digital -</div>'+
   '</div>';
 }
 /* ---- Ticket térmico de 58 mm (impresoras POS tipo POS-H58) ----
    Se imprime en un iframe con su propia hoja @page de 58 mm para
    no chocar con la hoja carta que usan los QR y el corte.       */
 const sinEmoji=t=>String(t||"").replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]/gu,"").replace(/\s+/g," ").trim();
+/* Las impresoras térmicas económicas (y los controladores "de solo texto")
+   imprimen «?» en lugar de símbolos como ▸ · — × y suelen mancharse con los
+   acentos. Para el TICKET (no para pantalla) dejamos texto simple y legible
+   pase lo que pase con el driver: quitamos acentos y cambiamos los símbolos. */
+const asciiSeguro=t=>String(t||"")
+  .normalize("NFD").replace(/[\u0300-\u036f]/g,"")   // é→e, ñ→n, ú→u…
+  .replace(/[·•]/g,"-").replace(/[▸►▶‣]/g,">").replace(/[—–]/g,"-")
+  .replace(/[×✕]/g,"x");
+const tkTxt=t=>asciiSeguro(sinEmoji(t));
 
 let LOGO_TK=null;   // logo del molcajete en blanco y negro puro (cache)
 function logoTicket(){
@@ -939,8 +1033,8 @@ function logoTicket(){
 function tk58HTML(c){
   const logo=logoTicket();
   const filas=c.items.map(it=>
-    '<tr><td class="q">'+it.q+'×</td><td class="n">'+sinEmoji(it.n)+'</td><td class="i">'+pesos(it.imp)+'</td></tr>'+
-    (it.sel?'<tr><td></td><td colspan="2" class="sel">▸ '+sinEmoji(it.sel)+'</td></tr>':"")
+    '<tr><td class="q">'+it.q+'x</td><td class="n">'+tkTxt(it.n)+'</td><td class="i">'+pesos(it.imp)+'</td></tr>'+
+    (it.sel?'<tr><td></td><td colspan="2" class="sel">&gt; '+tkTxt(it.sel)+'</td></tr>':"")
   ).join("");
   return '<!DOCTYPE html><html><head><meta charset="utf-8"><style>'+
     '@page{size:58mm auto;margin:0}'+
@@ -970,15 +1064,15 @@ function tk58HTML(c){
     '<div class="nm">MOLCAJETE</div>'+
     '<div class="sb">COCINA MEXICANA</div>'+
     '<div class="sep"></div>'+
-    '<div class="dst">'+sinEmoji(c.destino)+'</div>'+
-    '<div class="meta">Folio '+c.folio+' · '+horaMX(c.ts)+'</div>'+
+    '<div class="dst">'+tkTxt(c.destino)+'</div>'+
+    '<div class="meta">Folio '+c.folio+' - '+horaMX(c.ts)+'</div>'+
     '<div class="sep"></div>'+
     '<table>'+filas+'</table>'+
-    (c.notas?'<div class="nts">NOTAS: '+sinEmoji(c.notas)+'</div>':"")+
+    (c.notas?'<div class="nts">NOTAS: '+tkTxt(c.notas)+'</div>':"")+
     '<div class="sep"></div>'+
     '<div class="tot"><span>TOTAL</span><span>'+pesos(c.total)+'</span></div>'+
-    '<div class="pgo">Pago: '+c.pago+'</div>'+
-    '<div class="pie">— Comanda del menú digital —</div>'+
+    '<div class="pgo">Pago: '+tkTxt(c.pago)+'</div>'+
+    '<div class="pie">- Comanda del menu digital -</div>'+
     '</div></body></html>';
 }
 
@@ -1131,10 +1225,17 @@ function renderVentas(){
     (filas||'<tr class="vac"><td colspan="7">Aún no hay órdenes en esta jornada.</td></tr>');
 }
 $("vRefresh").onclick=async()=>{await cargaComandas();renderVentas();};
+/* nombre del archivo del corte (compartido por PDF y Excel) */
+function nombreCorte(ini,ext){
+  const f=new Date(ini);
+  return "corte-molcajete-"+f.getFullYear()+"-"+String(f.getMonth()+1).padStart(2,"0")+"-"+String(f.getDate()).padStart(2,"0")+"."+ext;
+}
 $("vPDF").onclick=()=>{
   const d=datosJornada();
   try{
-    const {jsPDF}=window.jspdf;const doc=new jsPDF();
+    const {jsPDF}=window.jspdf;
+    /* tamaño CARTA (letter), por si la clienta quiere imprimirlo */
+    const doc=new jsPDF({unit:"mm",format:"letter"});
     doc.setFont("helvetica","bold");doc.setFontSize(17);
     doc.text("MOLCAJETE · Cocina Mexicana",14,16);
     doc.setFontSize(12);doc.text("Corte de ventas del menú digital",14,23);
@@ -1154,8 +1255,7 @@ $("vPDF").onclick=()=>{
     doc.setFont("helvetica","normal");doc.setFontSize(10);
     Object.entries(d.porPago).forEach(([p,t])=>{doc.text("   "+p+": "+pesos(t),14,y);y+=6;});
     if(d.activas.length){doc.text("Pendientes en cocina al generar el corte: "+d.activas.length,14,y+2);}
-    const f=new Date(d.ini);
-    doc.save("corte-molcajete-"+f.getFullYear()+"-"+String(f.getMonth()+1).padStart(2,"0")+"-"+String(f.getDate()).padStart(2,"0")+".pdf");
+    doc.save(nombreCorte(d.ini,"pdf"));
   }catch(e){
     /* respaldo si el CDN del PDF no cargó: imprimir la tabla (se puede "Guardar como PDF") */
     const pa=$("printArea");
@@ -1166,6 +1266,93 @@ $("vPDF").onclick=()=>{
     setTimeout(()=>{window.print();setTimeout(()=>pa.innerHTML="",400);},100);
   }
 };
+
+/* ---- Corte en EXCEL (editable) ---- */
+function filasCorte(d){
+  const enc=["Hora","Folio","Destino","Platillos","Pago","Total","Estado"];
+  const cuerpo=d.del.map(c=>[
+    horaMX(c.ts), c.folio, c.destino,
+    c.items.map(it=>it.q+"x "+it.n+(it.sel?" ("+it.sel+")":"")).join("; "),
+    c.pago, c.total, c.estado==="hecha"?"Entregada":"En cocina"
+  ]);
+  return {enc,cuerpo};
+}
+$("vXLS").onclick=()=>{
+  const d=datosJornada();
+  const {enc,cuerpo}=filasCorte(d);
+  /* Vía preferida: archivo .xlsx real con SheetJS */
+  if(window.XLSX){
+    try{
+      const aoa=[
+        ["MOLCAJETE · Cocina Mexicana"],
+        ["Corte de ventas del menú digital"],
+        ["Jornada: "+fechaMX(d.ini)+" (1:00 am a 12:59 am)"],
+        ["Generado: "+new Date().toLocaleString("es-MX")],
+        [],
+        enc,
+        ...cuerpo,
+        [],
+        ["TOTAL VENDIDO (entregadas)","","","","",d.totalVendido,d.hechas.length+" orden(es)"],
+        ...Object.entries(d.porPago).map(([p,t])=>["Pago "+p,"","","","",t,""]),
+      ];
+      if(d.activas.length)aoa.push(["Pendientes en cocina al generar el corte",d.activas.length]);
+      const ws=XLSX.utils.aoa_to_sheet(aoa);
+      ws["!cols"]=[{wch:10},{wch:12},{wch:16},{wch:42},{wch:14},{wch:12},{wch:12}];
+      const wb=XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb,ws,"Corte del día");
+      XLSX.writeFile(wb,nombreCorte(d.ini,"xlsx"));
+      muestraGuardando("Excel descargado ✓");
+      return;
+    }catch(e){/* cae al respaldo CSV */}
+  }
+  /* Respaldo: CSV (se abre y edita igual en Excel) */
+  try{
+    const esc=v=>{v=String(v==null?"":v);return /[",\n;]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
+    const lineas=[
+      ["MOLCAJETE - Cocina Mexicana"],
+      ["Corte de ventas del menu digital"],
+      ["Jornada: "+fechaMX(d.ini)],
+      [],
+      enc, ...cuerpo, [],
+      ["TOTAL VENDIDO (entregadas)","","","","",d.totalVendido,d.hechas.length+" orden(es)"],
+      ...Object.entries(d.porPago).map(([p,t])=>["Pago "+p,"","","","",t,""]),
+    ].map(r=>r.map(esc).join(",")).join("\r\n");
+    const blob=new Blob(["\ufeff"+lineas],{type:"text/csv;charset=utf-8;"});
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);a.download=nombreCorte(d.ini,"csv");
+    document.body.appendChild(a);a.click();
+    setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},400);
+    muestraGuardando("Descargado en CSV (se abre en Excel) ✓");
+  }catch(e){muestraGuardando("❌ No se pudo generar el archivo");}
+};
+
+/* ==================== PANTALLA DE COCINA (sin precios) ==================== */
+const KDS_KEY="molcajete_kds";
+$("btnCocina").onclick=async()=>{
+  if(ROL==="soporte"){muestraGuardando("🔧 Cuenta de soporte: la pantalla de cocina no está disponible");return;}
+  const btn=$("btnCocina");const txt=btn.textContent;btn.disabled=true;btn.textContent="Abriendo…";
+  /* abrimos la ventana YA (evita que el navegador la bloquee) y luego le ponemos la dirección */
+  const win=window.open("","_blank");
+  try{
+    const r=await fetch("/api/cocina/nuevo",{method:"POST",headers:hAuth({"content-type":"application/json"}),body:"{}"});
+    if(r.status===401){if(win)win.close();cierraSesionLocal("Tu sesión terminó. Vuelve a entrar para continuar.");return;}
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok||!d.url)throw new Error(d.error||"No se pudo abrir la pantalla de cocina.");
+    localStorage.setItem(KDS_KEY,d.token);
+    const dest=location.origin+d.url;
+    if(win){win.location.href=dest;}
+    else{muestraGuardando("Permite las ventanas emergentes y toca de nuevo");}
+  }catch(e){
+    if(win)win.close();
+    muestraGuardando("❌ "+((e&&e.message)||"No se pudo abrir la pantalla de cocina"));
+  }
+  btn.disabled=false;btn.textContent=txt;
+};
+
+/* ==================== BOTÓN FLOTANTE · CONFIGURAR IMPRESORA ==================== */
+$("fabPrint").onclick=()=>$("cfgModal").classList.add("show");
+$("cfgCerrar").onclick=()=>$("cfgModal").classList.remove("show");
+$("cfgModal").addEventListener("click",e=>{if(e.target.id==="cfgModal")e.target.classList.remove("show");});
 
 /* ==================== ARRANQUE ==================== */
 function arranque(){

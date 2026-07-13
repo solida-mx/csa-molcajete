@@ -1,160 +1,116 @@
-⚠️ AVISO v6.1: la estructura cambió. Ahora la RAÍZ (/) es el panel
-de ADMINISTRACIÓN (con inicio de sesión) y el menú de comensales
-vive en /menu/ (los QR abren /menu/?mesa=N). Las ligas y rutas
-mencionadas abajo corresponden a la versión anterior; consulta
-NOVEDADES-v6-ADMIN.txt para lo vigente.
-
 ╔══════════════════════════════════════════════════════════════════╗
 ║   SOLIDA APLICACIONES — Cliente: Molcajete Cocina Mexicana         ║
-║   Paquete: Premium · Menú Premium ($3,990)                         ║
-║   Proyecto propio: csa-molcajete.j23salva.workers.dev              ║
+║   NOVEDADES v6 · Panel de administración con inicio de sesión      ║
 ╚══════════════════════════════════════════════════════════════════╝
 
 ┌───────────────────────────────────────────────────────────┐
-│  ESTRUCTURA (lista para la RAÍZ de tu repo csa-molcajete)   │
+│  1. INICIO DE SESIÓN · DOS CUENTAS (v6.2)                   │
 └───────────────────────────────────────────────────────────┘
 
-  index.html ......... Menú Premium: el comensal escanea el QR de
-                       su mesa, arma su orden (salsa, guiso y
-                       guarniciones a elegir) y la comanda llega
-                       a la PANTALLA DE COMANDAS de la caja
-                       (/mesas/); si el API falla o no está
-                       configurado, sale por WhatsApp como
-                       respaldo. Incluye para llevar,
-                       formas de pago, notas a cocina, comanda
-                       descargable, sesión de 20 min y sección de
-                       ubicación / horarios / Maps / Facebook.
-  mesas/index.html ... Panel del restaurante (uso del dueño):
-                       COMANDAS en vivo (con sonido e impresión),
-                       DISPONIBILIDAD de platillos, reporte de
-                       VENTAS con PDF del corte diario, y QR de
-                       mesas para generar e imprimir etiquetas. Los QR van en los COLORES DE
-                       LA MARCA (módulos verdes, esquinas rojas) y
-                       con el ÍCONO DEL MOLCAJETE al centro.
-  img/ ............... logo.png (letrero completo, transparente),
-                       molcajete-icon.png (ícono para el QR) y
-                       logo-fondo-negro.jpg.
+  CUENTA DE LA CLIENTA (dueña) — ve todo su negocio:
 
-  Estos archivos van DIRECTO en la raíz del repositorio (así como
-  ya lo tienes publicado). No los metas en una subcarpeta o las
-  ligas de abajo cambiarían.
+      Usuario:     molcajete
+      Contraseña:  Molcajete-2VwsK1QWiV   (inicial; que la cambie
+                                           ella misma al recibir la app)
+
+  CUENTA DE SOPORTE (tuya) — la aplicación se abre VACÍA:
+
+      Usuario:     soporte
+      Contraseña:  Soporte-xEKGUC2ogj     (inicial; cámbiala tú)
+
+  PRIVACIDAD REAL, DEL LADO DEL SERVIDOR:
+  · Con la cuenta "soporte", el propio worker responde la lista
+    de comandas VACÍA: las ventas y pedidos de la clienta nunca
+    viajan a tu navegador. No es un ocultamiento visual.
+  · Además la cuenta de soporte es SOLO LECTURA: el servidor
+    rechaza (403) cualquier intento de guardar disponibilidad o
+    tocar comandas. Puedes revisar diseño y estructura sin
+    riesgo de mover nada del negocio.
+  · Dentro del panel, la cuenta de soporte muestra un letrero
+    amarillo permanente que lo indica, para total transparencia.
+
+  CAMBIO DE CONTRASEÑA (ambas cuentas, sin tocar código):
+  · En la pantalla de inicio de sesión: "¿Quieres cambiar tu
+    contraseña?" → usuario + contraseña actual + nueva (mínimo
+    8 caracteres) dos veces.
+  · La nueva se guarda HASHEADA (SHA-256 con sal) en el KV; la
+    contraseña inicial escrita en worker.js deja de valer para
+    esa cuenta desde ese momento.
+  · Al cambiarla se cierran todas las sesiones abiertas de esa
+    cuenta (hay que volver a entrar).
+  · SI LA CLIENTA OLVIDA SU CONTRASEÑA: borra en Cloudflare la
+    clave "usr:molcajete" del KV y volverá a valer la inicial de
+    worker.js (dásela y que la cambie de nuevo).
+
+  · La sesión dura 12 horas por dispositivo y caduca sola.
+  · Máximo 8 intentos fallidos cada 10 minutos por IP (aplica a
+    entrar y a cambiar contraseña).
+
+  SOBRE EL MULTIFACTOR (MFA) POR WHATSAPP:
+  · No es viable hoy sin un cambio grande: mandar mensajes de
+    WhatsApp requiere la API de WhatsApp Business (cuenta de
+    Meta o Twilio, verificación del negocio y costo por mensaje).
+  · Alternativa ligera a futuro si se quisiera: código TOTP tipo
+    Google Authenticator (sin mensajes, sin costo); se puede
+    agregar después sobre esta misma base.
 
 ┌───────────────────────────────────────────────────────────┐
-│  LAS DOS LIGAS PARA COMPARTIR CON LA CLIENTA                │
+│  2. NUEVO DISEÑO DEL PANEL                                  │
 └───────────────────────────────────────────────────────────┘
 
-  • MENÚ (comensales, es la que va en redes):
-      https://csa-molcajete.j23salva.workers.dev/
-    Los QR de mesa la abren como .../?mesa=1, ?mesa=2, ?mesa=3.
-
-  • QR DE MESAS (solo para la dueña, NO publicar en redes):
-      https://csa-molcajete.j23salva.workers.dev/mesas/
-    Ahí genera e imprime los QR. La misma página muestra ambas
-    ligas con botón de "Copiar".
+  · Menú superior estilo app, fijo al hacer scroll y deslizable
+    de izquierda a derecha, con 5 pestañas:
+      🏠 Inicio · 🍽️ Disponibilidad · 🧾 Comandas ·
+      📊 Ventas · 🖨️ Generador QR de menú
+  · Pestaña INICIO (nueva): KPIs de la jornada en vivo:
+      - Vendido hoy y órdenes entregadas
+      - Ticket promedio
+      - Pendientes en cocina (y monto por entregar)
+      - Órdenes en mesa vs. para llevar
+      - Gráfica de ventas por hora
+      - Top 5 de platillos más pedidos
+      - Desglose por forma de pago
+  · Se eliminó el recuadro "Tus dos ligas".
+  · Encabezado más compacto y formal, con el logo del negocio.
 
 ┌───────────────────────────────────────────────────────────┐
-│  PENDIENTE HOY: subir esta versión                          │
+│  3. SEGURIDAD ADICIONAL                                     │
 └───────────────────────────────────────────────────────────┘
 
-  Lo que está publicado ahorita es la PRIMERA versión: el botón
-  "Cómo llegar" aún abre la búsqueda de Google y la página de
-  mesas trae el diseño viejo. Para actualizar:
-
-  1. Abre el repo csa-molcajete en GitHub.
-  2. "Add file" → "Upload files".
-  3. Arrastra index.html, la carpeta img/ y la carpeta mesas/
-     (el contenido de esta entrega, no la carpeta contenedora).
-  4. Commit: "Maps directo + QR mesas con diseño Molcajete".
-  5. Espera 1-2 min y revisa en incógnito o con Ctrl+Shift+R.
-
-  PRUEBA COMPLETA ANTES DE ENTREGAR
-  • https://csa-molcajete.j23salva.workers.dev/?mesa=2
-    → debe decir "Estás en la Mesa 2".
-  • "Cómo llegar" → debe abrir Google Maps directo.
-  • Agrega chilaquiles (pide salsa y guiso), envía la orden y
-    verifica que llegue al WhatsApp 844 102 2805 con mesa,
-    opciones y total correctos.
-  • /mesas/ → genera, elige tamaño e imprime una hoja de prueba;
-    escanea el QR impreso con un celular.
+  · La clave fija anterior ("molcajete-dispo-2026") queda
+    REVOCADA: ya no funciona ni aparece en el código que ven
+    los navegadores.
+  · worker.js, wrangler.jsonc y los archivos .txt ya NO se
+    sirven al público (responden 404).
+  · Las APIs de administración (leer comandas, marcar entregada,
+    guardar disponibilidad) solo funcionan con sesión iniciada.
+  · Lo público sigue igual: los comensales ven el menú y envían
+    su orden sin ningún login.
 
 ┌───────────────────────────────────────────────────────────┐
-│  IMPRESIÓN DE LOS QR                                        │
+│  4. LIGAS (nueva estructura, v6.1)                          │
 └───────────────────────────────────────────────────────────┘
 
-  Como el proyecto ya vive en su URL definitiva, ya puedes
-  imprimir con confianza: cada QR queda grabado con
-  https://csa-molcajete.j23salva.workers.dev/?mesa=N
-  (si algún día lo mueves a un dominio propio, habría que
-  reimprimir).
+  · ADMINISTRACIÓN (liga principal, abre el inicio de sesión):
+        https://csa-molcajete.j23salva.workers.dev/
 
-  Tamaños en hoja carta (el cliente elige en la página):
-    Chica   · 9 por hoja · aprox. 6 × 8 cm
-    Mediana · 4 por hoja · aprox. 9.5 × 12.5 cm
-    Grande  · 2 por hoja · aprox. 12 × 12.5 cm
-  Los QR usan corrección de error nivel alto (H), colores de
-  marca suficientemente oscuros para cualquier lector, y el
-  ícono cubre menos del 10% del código. Verificado con lector
-  en los tres tamaños y en las 3 mesas.
+  · MENÚ de comensales (SOLO llega por los QR de mesa):
+        https://csa-molcajete.j23salva.workers.dev/menu/
+    Los QR generados en el panel abren /menu/?mesa=1, ?mesa=2…
+
+  · Redirecciones automáticas: /mesas/ y /admin llevan a la
+    raíz (panel); /menu (sin diagonal) lleva a /menu/ y
+    conserva el ?mesa=N.
+
+  OJO: como los QR ahora apuntan a /menu/, cualquier QR que se
+  hubiera impreso con una versión anterior (apuntando a la raíz)
+  debe REIMPRIMIRSE desde la pestaña "Generador QR de menú".
 
 ┌───────────────────────────────────────────────────────────┐
-│  DATOS CONFIGURADOS                                         │
+│  5. PUBLICAR                                                │
 └───────────────────────────────────────────────────────────┘
 
-  • WhatsApp de cocina (comandas): 844 102 2805
-  • Mesas: 1 a 3 · Pagos: Efectivo, Tarjeta, Transferencia
-  • Sin propinas ni cargos extra (quedó pendiente en el
-    levantamiento; no se aplica nada)
-  • Horarios: L-V 9am-5pm · S-D 10am-5pm
-  • Maps: liga directa maps.app.goo.gl/pHbkF9dWme8Bt8Wv8
-
-  CÓMO EDITAR EL MENÚ DESPUÉS  (¡CAMBIÓ DE LUGAR!)
-  El bloque  const MENU={ ... }  ahora vive en el archivo
-  menu.js (raíz del repo), porque lo comparten el menú y la
-  página de mesas. Se edita igual que siempre:
-  • p: precio · n: nombre · d: descripción · img: emoji
-  • ops: opciones que se preguntan al comensal; el número de
-    cada opción es el costo extra, ej. ["Barbacoa",5] = +$5.
-  • No cambies los "id" de platillos ya publicados (la
-    disponibilidad guardada se liga a ese id).
-  El bloque CONFIG (WhatsApp de cocina, minutos) sigue en
-  index.html.
-
-  NUEVO EN ESTA VERSIÓN
-  • COMANDAS EN VIVO: las órdenes llegan a /mesas/ (pestaña
-    Comandas) en orden de llegada, con sonido. NADA se imprime
-    solo: la encargada toca una comanda y elige si imprime su
-    ticket o solo la marca entregada. El ticket sale
-    en formato de IMPRESORA TÉRMICA de 58 mm (POS-H58) con el
-    logo del molcajete en blanco y negro (configuración de la
-    impresora: ver INSTRUCCIONES-CLOUDFLARE.txt).
-  • REPORTE DE VENTAS: pestaña Ventas con la jornada del día
-    (1:00 am a 12:59 am), totales, desglose por forma de pago
-    y PDF del corte para guardar/imprimir. Las comandas se
-    borran solas a las 30 h: descargar el PDF cada día.
-  • En /mesas/, cada QR de la lista se puede TOCAR y abre el
-    menú de esa mesa en pestaña nueva (para probar sin
-    escanear). La impresión sale igual que antes.
-  • Pestaña DISPONIBILIDAD: la dueña apaga un platillo cuando
-    se acaba y a los comensales les aparece "Agotado por hoy".
-  • Todo lo anterior requiere UN paso técnico de una sola vez
-    en Cloudflare (gratis, ~5 min):
-    ver INSTRUCCIONES-CLOUDFLARE.txt.
-
-┌───────────────────────────────────────────────────────────┐
-│  PENDIENTES / SUPUESTOS (confírmalos con Magda)             │
-└───────────────────────────────────────────────────────────┘
-
-  1. PRECIOS: donde el levantamiento y el menú PDF nuevo no
-     coincidían, usé el PDF (es el menú nuevo): hot-cakes $100,
-     gorditas $20, chile relleno especial $155, refrescos
-     $20/400ml y $30/600ml; se agregaron menú infantil ($80),
-     ensalada de pollo, café de olla y postres.
-  2. TELÉFONO: el PDF trae +52 228 501 5761, pero el
-     levantamiento dice que las comandas van al 844 102 2805.
-     Usé el 844. Confirmar cuál es el bueno.
-  3. Fotos de platillos: pendientes; hoy la página usa emojis.
-  4. Sabores de refresco: tomados de los logos del PDF.
-  5. Enchiladas rojas con opción pollo o queso (del
-     levantamiento; el PDF no lo aclara).
-
-  ── Hecho con Solida Aplicaciones ──
+  Igual que siempre: sube estos archivos a la RAÍZ del repo
+  csa-molcajete (reemplazando worker.js y mesas/index.html) y
+  Cloudflare publica solo. No hay pasos nuevos en Cloudflare:
+  se usa el mismo KV (binding DISPO) ya configurado.

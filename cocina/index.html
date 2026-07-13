@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Molcajete · Comandas de cocina</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Yeseva+One&family=Karla:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --negro:#0b0b0b;--negro-2:#181614;--panel:#14120f;--card:#1e1b16;
+    --verde:#63977f;--verde-osc:#3d6f5d;--rojo:#e0463d;--oro:#eac81f;
+    --crema:#faf5ea;--muted:#9a8f7c;--line:#2c2620;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:"Karla",sans-serif;background:var(--negro);color:var(--crema);min-height:100vh}
+  h1,h2{font-family:"Yeseva One",serif;font-weight:400}
+  .sarape{height:6px;background:repeating-linear-gradient(90deg,var(--verde-osc) 0 46px,var(--oro) 46px 58px,var(--rojo) 58px 104px,var(--crema) 104px 116px)}
+
+  header{position:sticky;top:0;z-index:10;background:linear-gradient(180deg,#000,#141210);
+    display:flex;align-items:center;gap:16px;padding:12px 20px;border-bottom:1px solid var(--line)}
+  header img{height:40px;width:auto}
+  header .ti{flex:1}
+  header .ti h1{font-size:22px;line-height:1}
+  header .ti .sb{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--oro);font-weight:800}
+  header .clock{font-family:"Yeseva One",serif;font-size:26px;color:var(--crema)}
+  header .count{background:var(--rojo);color:#fff;font-weight:800;font-size:15px;border-radius:999px;padding:6px 15px;white-space:nowrap}
+  header .count.cero{background:var(--verde-osc)}
+  header .snd{background:transparent;border:1.5px solid var(--line);color:var(--crema);font-family:inherit;font-weight:800;
+    font-size:13px;padding:9px 13px;border-radius:999px;cursor:pointer;white-space:nowrap}
+  header .snd.on{border-color:var(--verde);color:var(--verde)}
+  .dot{width:10px;height:10px;border-radius:50%;background:var(--verde);box-shadow:0 0 10px var(--verde)}
+  .dot.off{background:var(--rojo);box-shadow:0 0 10px var(--rojo)}
+
+  .wrap{padding:18px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+
+  .card{background:var(--card);border:1px solid var(--line);border-left:8px solid var(--verde);border-radius:16px;
+    padding:16px 18px;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+  .card.llevar{border-left-color:var(--oro)}
+  .card.nuevo{animation:pop 1.4s ease}
+  @keyframes pop{0%{box-shadow:0 0 0 0 rgba(224,70,61,.7)}70%{box-shadow:0 0 0 16px rgba(224,70,61,0)}100%{box-shadow:0 6px 18px rgba(0,0,0,.35)}}
+  .card .top{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px}
+  .card .dst{font-family:"Yeseva One",serif;font-size:26px;color:var(--crema)}
+  .card .tag{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#111;background:var(--oro);padding:2px 8px;border-radius:6px}
+  .card .meta{display:flex;gap:10px;font-size:13px;color:var(--muted);font-weight:700;margin-bottom:10px}
+  .card .ago{margin-left:auto;color:var(--verde);font-weight:800}
+  .card .ago.tarde{color:var(--rojo)}
+  .card ul{list-style:none}
+  .card li{padding:9px 0;border-bottom:1px dashed var(--line);font-size:19px;font-weight:700;line-height:1.25}
+  .card li:last-child{border-bottom:none}
+  .card li .q{display:inline-block;min-width:2.1em;color:var(--oro);font-family:"Yeseva One",serif;font-size:22px}
+  .card li .sel{display:block;margin-left:2.1em;color:var(--verde);font-size:15px;font-weight:700;margin-top:2px}
+  .card .notas{margin-top:12px;background:#2a2213;border:1px solid #5a4a1e;border-radius:10px;padding:10px 13px;
+    font-size:15px;color:#f0d98a;font-weight:700}
+
+  .empty{text-align:center;padding:80px 20px;color:var(--muted)}
+  .empty .big{font-size:64px;margin-bottom:12px}
+  .empty h2{font-size:26px;color:var(--crema);margin-bottom:6px}
+
+  .avisobar{display:none;background:rgba(224,70,61,.14);border-bottom:1px solid rgba(224,70,61,.5);
+    color:#f3b6b1;font-weight:700;font-size:14px;padding:10px 20px;text-align:center}
+  .avisobar.show{display:block}
+
+  .foot{text-align:center;color:var(--muted);font-size:12px;padding:22px 20px 30px}
+  .foot .st{display:inline-flex;align-items:center;gap:7px}
+
+  /* Pantalla de error (pase no válido / caducado) */
+  #err{position:fixed;inset:0;background:linear-gradient(180deg,#000,#141210);display:none;
+    flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px;z-index:50}
+  #err.show{display:flex}
+  #err img{height:70px;margin-bottom:18px}
+  #err h2{font-size:26px;margin-bottom:10px}
+  #err p{color:var(--muted);max-width:440px;font-size:15px;line-height:1.6}
+  #err .box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin-top:20px;max-width:460px}
+</style>
+</head>
+<body>
+<div class="sarape"></div>
+<header>
+  <img src="/img/logo.png" alt="Molcajete">
+  <div class="ti">
+    <h1>Comandas · Cocina</h1>
+    <div class="sb">Molcajete · Cocina Mexicana</div>
+  </div>
+  <button class="snd" id="snd">🔔 Activar sonido</button>
+  <div class="clock" id="clock">--:--</div>
+  <div class="count cero" id="count">0 pendientes</div>
+</header>
+<div class="avisobar" id="aviso"></div>
+
+<div class="wrap">
+  <div class="grid" id="grid"></div>
+</div>
+
+<div class="foot">
+  <span class="st"><span class="dot" id="dot"></span><span id="stTxt">Conectando…</span></span>
+  · La lista se actualiza sola · Cuando en administración marcan una comanda como entregada, aquí desaparece.
+</div>
+
+<div id="err">
+  <img src="/img/logo.png" alt="Molcajete">
+  <h2>Pantalla de cocina no disponible</h2>
+  <p id="errTxt">El pase de esta pantalla caducó o no es válido.</p>
+  <div class="box">Vuelve a abrirla desde el panel de <b>administración</b> → pestaña <b>Comandas</b> → botón <b>«Comandas para cocina»</b>.</div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+/* El "pase" llega UNA vez por la liga (?k=...). Lo guardamos en ESTE
+   dispositivo y limpiamos la dirección, para que no quede a la vista
+   ni se comparta por accidente. En recargas se toma del dispositivo. */
+const KDS_STORE="molcajete_kds_pase";
+let PASE="";
+(function(){
+  let u="";try{u=new URLSearchParams(location.search).get("k")||"";}catch(e){}
+  if(u){
+    PASE=u;
+    try{localStorage.setItem(KDS_STORE,u);}catch(e){}
+    try{history.replaceState(null,"",location.pathname);}catch(e){}  // quita ?k=... de la barra
+  }else{
+    try{PASE=localStorage.getItem(KDS_STORE)||"";}catch(e){PASE="";}
+  }
+})();
+const horaMX=ts=>new Date(ts).toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit"});
+
+let vistos=null, sonido=false, AC=null, sinConexion=false;
+
+/* reloj */
+function tic(){const d=new Date();$("clock").textContent=d.toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit"});}
+tic();setInterval(tic,15000);
+
+/* sonido opcional (requiere un toque por las reglas del navegador) */
+$("snd").onclick=()=>{
+  try{
+    AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+    if(AC.state==="suspended")AC.resume();
+    sonido=true;$("snd").classList.add("on");$("snd").textContent="🔔 Sonido activado";
+    ding();
+  }catch(e){}
+};
+function ding(){
+  if(!sonido||!AC)return;
+  try{[0,.28].forEach(off=>{
+    const o=AC.createOscillator(),g=AC.createGain();
+    o.connect(g);g.connect(AC.destination);o.frequency.value=880;
+    g.gain.setValueAtTime(.0001,AC.currentTime+off);
+    g.gain.exponentialRampToValueAtTime(.5,AC.currentTime+off+.02);
+    g.gain.exponentialRampToValueAtTime(.0001,AC.currentTime+off+.5);
+    o.start(AC.currentTime+off);o.stop(AC.currentTime+off+.55);
+  });}catch(e){}
+}
+
+function estado(ok,txt){
+  $("dot").classList.toggle("off",!ok);
+  $("stTxt").textContent=txt;
+}
+function muestraError(txt){
+  if(txt)$("errTxt").textContent=txt;
+  $("err").classList.add("show");
+}
+
+function pinta(cmds){
+  $("count").textContent=cmds.length+" pendiente"+(cmds.length===1?"":"s");
+  $("count").classList.toggle("cero",cmds.length===0);
+  const grid=$("grid");
+  if(!cmds.length){
+    grid.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="big">🎉</div><h2>Sin comandas pendientes</h2><p>Aquí aparecerán los pedidos en cuanto lleguen.</p></div>';
+    return;
+  }
+  grid.innerHTML=cmds.map(c=>{
+    const min=Math.max(0,Math.round((Date.now()-c.ts)/60000));
+    const nuevo=vistos!==null && !vistos.has(c.id);
+    const items=c.items.map(it=>
+      '<li><span class="q">'+it.q+'x</span> '+esc(it.n)+
+      (it.sel?'<span class="sel">▸ '+esc(it.sel)+'</span>':'')+'</li>'
+    ).join("");
+    return '<div class="card'+(c.tipo==="llevar"?" llevar":"")+(nuevo?" nuevo":"")+'">'+
+      '<div class="top"><span class="dst">'+esc(c.destino)+'</span>'+
+        (c.tipo==="llevar"?'<span class="tag">Para llevar</span>':'')+'</div>'+
+      '<div class="meta"><span>'+esc(c.folio)+'</span><span>'+horaMX(c.ts)+'</span>'+
+        '<span class="ago'+(min>=20?" tarde":"")+'">hace '+min+' min</span></div>'+
+      '<ul>'+items+'</ul>'+
+      (c.notas?'<div class="notas">📝 '+esc(c.notas)+'</div>':'')+
+    '</div>';
+  }).join("");
+}
+function esc(t){return String(t==null?"":t).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));}
+
+async function carga(){
+  if(!PASE){muestraError("Esta pantalla se abre desde el panel de administración; no tiene un pase válido.");return;}
+  try{
+    const r=await fetch("/api/cocina?k="+encodeURIComponent(PASE),{cache:"no-store"});
+    if(r.status===401){try{localStorage.removeItem(KDS_STORE);}catch(e){}estado(false,"Pase caducado");muestraError("El pase de esta pantalla caducó (llevaba muchas horas sin usarse).");return;}
+    if(!r.ok)throw new Error(r.status);
+    const d=await r.json();
+    const cmds=Array.isArray(d.comandas)?d.comandas:[];
+    /* sonar si llegó una comanda que no habíamos visto */
+    const ids=cmds.map(c=>c.id);
+    if(vistos!==null && ids.some(id=>!vistos.has(id)))ding();
+    pinta(cmds);
+    vistos=new Set(ids);
+    sinConexion=false;
+    estado(true,"Conectado · actualizado "+horaMX(Date.now()));
+  }catch(e){
+    sinConexion=true;
+    estado(false,"Sin conexión · reintentando…");
+  }
+}
+
+/* mantener vivo el pase mientras la pantalla siga abierta (así no se apaga
+   a media jornada aunque en administración cierren su sesión) */
+async function keepalive(){
+  if(!PASE)return;
+  try{await fetch("/api/cocina/keepalive?k="+encodeURIComponent(PASE),{method:"POST"});}catch(e){}
+}
+
+carga();
+keepalive();
+setInterval(carga,8000);                 // refresca la lista cada 8 s
+setInterval(keepalive,15*60*1000);       // renueva el pase cada 15 min
+document.addEventListener("visibilitychange",()=>{if(!document.hidden){carga();keepalive();}});
+</script>
+</body>
+</html>

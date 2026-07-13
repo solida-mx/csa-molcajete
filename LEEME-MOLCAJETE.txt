@@ -1,12 +1,160 @@
-# Archivos que NUNCA deben subirse como parte pública del sitio
-.git
-.github
-.wrangler
-.assetsignore
-node_modules
-worker.js
-wrangler.jsonc
-*.txt
-*.log
-*.map
-*.md
+⚠️ AVISO v6.1: la estructura cambió. Ahora la RAÍZ (/) es el panel
+de ADMINISTRACIÓN (con inicio de sesión) y el menú de comensales
+vive en /menu/ (los QR abren /menu/?mesa=N). Las ligas y rutas
+mencionadas abajo corresponden a la versión anterior; consulta
+NOVEDADES-v6-ADMIN.txt para lo vigente.
+
+╔══════════════════════════════════════════════════════════════════╗
+║   SOLIDA APLICACIONES — Cliente: Molcajete Cocina Mexicana         ║
+║   Paquete: Premium · Menú Premium ($3,990)                         ║
+║   Proyecto propio: csa-molcajete.j23salva.workers.dev              ║
+╚══════════════════════════════════════════════════════════════════╝
+
+┌───────────────────────────────────────────────────────────┐
+│  ESTRUCTURA (lista para la RAÍZ de tu repo csa-molcajete)   │
+└───────────────────────────────────────────────────────────┘
+
+  index.html ......... Menú Premium: el comensal escanea el QR de
+                       su mesa, arma su orden (salsa, guiso y
+                       guarniciones a elegir) y la comanda llega
+                       a la PANTALLA DE COMANDAS de la caja
+                       (/mesas/); si el API falla o no está
+                       configurado, sale por WhatsApp como
+                       respaldo. Incluye para llevar,
+                       formas de pago, notas a cocina, comanda
+                       descargable, sesión de 20 min y sección de
+                       ubicación / horarios / Maps / Facebook.
+  mesas/index.html ... Panel del restaurante (uso del dueño):
+                       COMANDAS en vivo (con sonido e impresión),
+                       DISPONIBILIDAD de platillos, reporte de
+                       VENTAS con PDF del corte diario, y QR de
+                       mesas para generar e imprimir etiquetas. Los QR van en los COLORES DE
+                       LA MARCA (módulos verdes, esquinas rojas) y
+                       con el ÍCONO DEL MOLCAJETE al centro.
+  img/ ............... logo.png (letrero completo, transparente),
+                       molcajete-icon.png (ícono para el QR) y
+                       logo-fondo-negro.jpg.
+
+  Estos archivos van DIRECTO en la raíz del repositorio (así como
+  ya lo tienes publicado). No los metas en una subcarpeta o las
+  ligas de abajo cambiarían.
+
+┌───────────────────────────────────────────────────────────┐
+│  LAS DOS LIGAS PARA COMPARTIR CON LA CLIENTA                │
+└───────────────────────────────────────────────────────────┘
+
+  • MENÚ (comensales, es la que va en redes):
+      https://csa-molcajete.j23salva.workers.dev/
+    Los QR de mesa la abren como .../?mesa=1, ?mesa=2, ?mesa=3.
+
+  • QR DE MESAS (solo para la dueña, NO publicar en redes):
+      https://csa-molcajete.j23salva.workers.dev/mesas/
+    Ahí genera e imprime los QR. La misma página muestra ambas
+    ligas con botón de "Copiar".
+
+┌───────────────────────────────────────────────────────────┐
+│  PENDIENTE HOY: subir esta versión                          │
+└───────────────────────────────────────────────────────────┘
+
+  Lo que está publicado ahorita es la PRIMERA versión: el botón
+  "Cómo llegar" aún abre la búsqueda de Google y la página de
+  mesas trae el diseño viejo. Para actualizar:
+
+  1. Abre el repo csa-molcajete en GitHub.
+  2. "Add file" → "Upload files".
+  3. Arrastra index.html, la carpeta img/ y la carpeta mesas/
+     (el contenido de esta entrega, no la carpeta contenedora).
+  4. Commit: "Maps directo + QR mesas con diseño Molcajete".
+  5. Espera 1-2 min y revisa en incógnito o con Ctrl+Shift+R.
+
+  PRUEBA COMPLETA ANTES DE ENTREGAR
+  • https://csa-molcajete.j23salva.workers.dev/?mesa=2
+    → debe decir "Estás en la Mesa 2".
+  • "Cómo llegar" → debe abrir Google Maps directo.
+  • Agrega chilaquiles (pide salsa y guiso), envía la orden y
+    verifica que llegue al WhatsApp 844 102 2805 con mesa,
+    opciones y total correctos.
+  • /mesas/ → genera, elige tamaño e imprime una hoja de prueba;
+    escanea el QR impreso con un celular.
+
+┌───────────────────────────────────────────────────────────┐
+│  IMPRESIÓN DE LOS QR                                        │
+└───────────────────────────────────────────────────────────┘
+
+  Como el proyecto ya vive en su URL definitiva, ya puedes
+  imprimir con confianza: cada QR queda grabado con
+  https://csa-molcajete.j23salva.workers.dev/?mesa=N
+  (si algún día lo mueves a un dominio propio, habría que
+  reimprimir).
+
+  Tamaños en hoja carta (el cliente elige en la página):
+    Chica   · 9 por hoja · aprox. 6 × 8 cm
+    Mediana · 4 por hoja · aprox. 9.5 × 12.5 cm
+    Grande  · 2 por hoja · aprox. 12 × 12.5 cm
+  Los QR usan corrección de error nivel alto (H), colores de
+  marca suficientemente oscuros para cualquier lector, y el
+  ícono cubre menos del 10% del código. Verificado con lector
+  en los tres tamaños y en las 3 mesas.
+
+┌───────────────────────────────────────────────────────────┐
+│  DATOS CONFIGURADOS                                         │
+└───────────────────────────────────────────────────────────┘
+
+  • WhatsApp de cocina (comandas): 844 102 2805
+  • Mesas: 1 a 3 · Pagos: Efectivo, Tarjeta, Transferencia
+  • Sin propinas ni cargos extra (quedó pendiente en el
+    levantamiento; no se aplica nada)
+  • Horarios: L-V 9am-5pm · S-D 10am-5pm
+  • Maps: liga directa maps.app.goo.gl/pHbkF9dWme8Bt8Wv8
+
+  CÓMO EDITAR EL MENÚ DESPUÉS  (¡CAMBIÓ DE LUGAR!)
+  El bloque  const MENU={ ... }  ahora vive en el archivo
+  menu.js (raíz del repo), porque lo comparten el menú y la
+  página de mesas. Se edita igual que siempre:
+  • p: precio · n: nombre · d: descripción · img: emoji
+  • ops: opciones que se preguntan al comensal; el número de
+    cada opción es el costo extra, ej. ["Barbacoa",5] = +$5.
+  • No cambies los "id" de platillos ya publicados (la
+    disponibilidad guardada se liga a ese id).
+  El bloque CONFIG (WhatsApp de cocina, minutos) sigue en
+  index.html.
+
+  NUEVO EN ESTA VERSIÓN
+  • COMANDAS EN VIVO: las órdenes llegan a /mesas/ (pestaña
+    Comandas) en orden de llegada, con sonido. NADA se imprime
+    solo: la encargada toca una comanda y elige si imprime su
+    ticket o solo la marca entregada. El ticket sale
+    en formato de IMPRESORA TÉRMICA de 58 mm (POS-H58) con el
+    logo del molcajete en blanco y negro (configuración de la
+    impresora: ver INSTRUCCIONES-CLOUDFLARE.txt).
+  • REPORTE DE VENTAS: pestaña Ventas con la jornada del día
+    (1:00 am a 12:59 am), totales, desglose por forma de pago
+    y PDF del corte para guardar/imprimir. Las comandas se
+    borran solas a las 30 h: descargar el PDF cada día.
+  • En /mesas/, cada QR de la lista se puede TOCAR y abre el
+    menú de esa mesa en pestaña nueva (para probar sin
+    escanear). La impresión sale igual que antes.
+  • Pestaña DISPONIBILIDAD: la dueña apaga un platillo cuando
+    se acaba y a los comensales les aparece "Agotado por hoy".
+  • Todo lo anterior requiere UN paso técnico de una sola vez
+    en Cloudflare (gratis, ~5 min):
+    ver INSTRUCCIONES-CLOUDFLARE.txt.
+
+┌───────────────────────────────────────────────────────────┐
+│  PENDIENTES / SUPUESTOS (confírmalos con Magda)             │
+└───────────────────────────────────────────────────────────┘
+
+  1. PRECIOS: donde el levantamiento y el menú PDF nuevo no
+     coincidían, usé el PDF (es el menú nuevo): hot-cakes $100,
+     gorditas $20, chile relleno especial $155, refrescos
+     $20/400ml y $30/600ml; se agregaron menú infantil ($80),
+     ensalada de pollo, café de olla y postres.
+  2. TELÉFONO: el PDF trae +52 228 501 5761, pero el
+     levantamiento dice que las comandas van al 844 102 2805.
+     Usé el 844. Confirmar cuál es el bueno.
+  3. Fotos de platillos: pendientes; hoy la página usa emojis.
+  4. Sabores de refresco: tomados de los logos del PDF.
+  5. Enchiladas rojas con opción pollo o queso (del
+     levantamiento; el PDF no lo aclara).
+
+  ── Hecho con Solida Aplicaciones ──
