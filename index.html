@@ -631,7 +631,6 @@ function muestraApp(){
   const rolTxt=ROL==="soporte"?"cuenta de soporte":(ROL==="duena"?"dueña":"");
   $("hUser").textContent=(u?("Sesión de "+u):"Sesión iniciada")+(rolTxt?" · "+rolTxt:"");
   $("sopBanner").classList.toggle("show",ROL==="soporte");
-  $("cocinaCta").style.display=(ROL==="soporte")?"none":"";
   saludoInicio();
   if(!appIniciada){appIniciada=true;arranque();}
   else cargaComandas();
@@ -1329,7 +1328,6 @@ $("vXLS").onclick=()=>{
 /* ==================== PANTALLA DE COCINA (sin precios) ==================== */
 const KDS_KEY="molcajete_kds";
 $("btnCocina").onclick=async()=>{
-  if(ROL==="soporte"){muestraGuardando("🔧 Cuenta de soporte: la pantalla de cocina no está disponible");return;}
   const btn=$("btnCocina");const txt=btn.textContent;btn.disabled=true;btn.textContent="Abriendo…";
   /* abrimos la ventana YA (evita que el navegador la bloquee) y luego le ponemos la dirección */
   const win=window.open("","_blank");

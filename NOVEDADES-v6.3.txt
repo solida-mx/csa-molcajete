@@ -83,4 +83,9 @@ DISPO) ya configurado.
   Ajuste opcional: worker.js → const KDS_HORAS = 14  (horas que
   vive el pase de cocina sin usarse).
 
+  CUENTA DE SOPORTE: el botón "Comandas por hacer" también se ve
+  con la cuenta de soporte (para revisar el diseño), pero abre una
+  vista de DEMOSTRACIÓN VACÍA: no muestra pedidos reales del
+  negocio, igual que el resto de la app en modo soporte.
+
   ── Hecho con Solida Aplicaciones ──

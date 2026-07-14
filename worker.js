@@ -84,14 +84,16 @@ async function sesionDe(request, env) {
   try { return JSON.parse(v); } catch (e) { return null; }
 }
 
-/* ¿La URL trae un PASE DE COCINA válido (?k=…)? Devuelve el token o null.
+/* ¿La URL trae un PASE DE COCINA válido (?k=…)? Devuelve {k, data} o null.
    Este pase da acceso SOLO a la vista de cocina (platillos sin precios);
    no sirve para administración ni para modificar nada.                  */
 async function paseCocina(url, env) {
   const k = (url.searchParams.get("k") || "").trim();
   if (!/^[A-Za-z0-9-]{20,60}$/.test(k)) return null;
   const v = await env.DISPO.get("kds:" + k);
-  return v ? k : null;
+  if (!v) return null;
+  let data; try { data = JSON.parse(v); } catch (e) { data = { rol: "cocina" }; }
+  return { k, data };
 }
 
 /* Al cambiar una contraseña se cierran las sesiones abiertas de esa cuenta */
@@ -268,30 +270,34 @@ export default {
        entregada, aquí desaparece en la siguiente actualización.
        El pase es INDEPENDIENTE de la sesión de administración.          */
 
-    // La administración (cuenta dueña) crea/renueva un pase de cocina
+    // La administración crea/renueva un pase de cocina. La cuenta de soporte
+    // recibe un pase de DEMOSTRACIÓN (vacío) para poder revisar el diseño sin
+    // ver pedidos reales del negocio.
     if (path === "/api/cocina/nuevo" && request.method === "POST") {
       const s = await sesionDe(request, env);
       if (!s) return j({ error: "sesion invalida" }, 401);
-      if (s.rol === "soporte") return j({ error: "Cuenta de soporte: no puede abrir la pantalla de cocina." }, 403);
+      const demo = s.rol === "soporte";
       const token = crypto.randomUUID();
-      await env.DISPO.put("kds:" + token, JSON.stringify({ rol: "cocina", ts: Date.now() }),
+      await env.DISPO.put("kds:" + token, JSON.stringify({ rol: "cocina", demo, ts: Date.now() }),
         { expirationTtl: KDS_HORAS * 3600 });
-      return j({ ok: true, token, url: "/cocina/?k=" + token, horas: KDS_HORAS });
+      return j({ ok: true, token, url: "/cocina/?k=" + token, horas: KDS_HORAS, demo });
     }
 
     // La pantalla de cocina se mantiene viva mientras esté abierta
     if (path === "/api/cocina/keepalive" && request.method === "POST") {
-      const k = await paseCocina(url, env);
-      if (!k) return j({ error: "pase de cocina invalido o caducado" }, 401);
-      await env.DISPO.put("kds:" + k, JSON.stringify({ rol: "cocina", ts: Date.now() }),
-        { expirationTtl: KDS_HORAS * 3600 });
+      const pase = await paseCocina(url, env);
+      if (!pase) return j({ error: "pase de cocina invalido o caducado" }, 401);
+      await env.DISPO.put("kds:" + pase.k, JSON.stringify(pase.data),
+        { expirationTtl: KDS_HORAS * 3600 });   // conserva el modo (demo o real)
       return j({ ok: true, horas: KDS_HORAS });
     }
 
     // La pantalla de cocina lee las comandas ACTIVAS, SIN precios ni pago
     if (path === "/api/cocina" && request.method === "GET") {
-      const k = await paseCocina(url, env);
-      if (!k) return j({ error: "pase de cocina invalido o caducado" }, 401);
+      const pase = await paseCocina(url, env);
+      if (!pase) return j({ error: "pase de cocina invalido o caducado" }, 401);
+      // Pase de demostración (soporte): lista vacía, igual que el resto de la app
+      if (pase.data && pase.data.demo) return j({ comandas: [], demo: true });
       const lista = await env.DISPO.list({ prefix: "cmd:" });
       const out = [];
       for (const key of lista.keys) {

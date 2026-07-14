@@ -196,6 +196,7 @@ async function carga(){
     if(r.status===401){try{localStorage.removeItem(KDS_STORE);}catch(e){}estado(false,"Pase caducado");muestraError("El pase de esta pantalla caducó (llevaba muchas horas sin usarse).");return;}
     if(!r.ok)throw new Error(r.status);
     const d=await r.json();
+    if(d.demo){$("aviso").textContent="👁️ Vista de demostración (cuenta de soporte): no se muestran pedidos reales del negocio.";$("aviso").classList.add("show");}
     const cmds=Array.isArray(d.comandas)?d.comandas:[];
     /* sonar si llegó una comanda que no habíamos visto */
     const ids=cmds.map(c=>c.id);
